@@ -13,20 +13,21 @@
 		}
 
 		.Main {
-			border-radius: 1.5rem;
+			border-radius: var(--radius-l);
 			box-shadow: 0.1rem 0.1rem 0.1rem rgba(0, 0, 0, 0.16);
 		}
 
 		.IngredientForm details {
 			margin-block: var(--gap-xs);
 			border: 1px solid hsla(var(--guideline-hsl), var(--hinted-opacity));
-			border-radius: 0.2rem;
+			border-radius: var(--radius-s);
 		}
 
 		.IngredientForm details > summary {
 			padding: var(--gap-xs) var(--gap-s);
 			font-size: var(--text-l);
 			color: hsla(var(--text-hsl), var(--hinted-opacity));
+			cursor: pointer;
 		}
 
 		.IngredientForm details > summary::marker {
@@ -35,11 +36,41 @@
 
 		.IngredientForm details[open] > summary {
 			font-weight: bold;
-			color: hsl(var(--color-hsl));
 		}
 
 		.IngredientForm details:not([open]) > summary:hover {
 			color: hsl(var(--primary-hsl), var(--hinted-opacity));
+		}
+
+		.IngredientSelector {
+			display: flex;
+			align-items: center;
+			gap: var(--gap-s);
+			padding: var(--gap-xs) var(--gap-s);
+		}
+
+		.IngredientSelector:not(:last-of-type) {
+			border-block-end: 1px solid hsla(var(--guideline-hsl), var(--hinted-opacity));
+		}
+
+		.IngredientSelector > span {
+			flex-grow: 1;
+		}
+
+		.IngredientSelector > label,
+		.IngredientSelector > a {
+			padding: var(--gap-xs) var(--gap-s);
+			border: 0.1rem solid hsl(var(--guideline-hsl));
+			border-radius: var(--radius-s);
+			color: inherit;
+			text-decoration: none;
+			cursor: pointer;
+		}
+
+		.IngredientSelector > label:hover,
+		.IngredientSelector > a:hover {
+			border-color: hsl(var(--primary-hsl));
+			color: hsl(var(--primary-hsl));
 		}
 
 		.IngredientSelector > input[type=checkbox] {
@@ -48,32 +79,12 @@
 			pointer-events: none;
 		}
 
-		.IngredientSelector > input[type=checkbox] + label {
-			display: flex;
-			align-items: center;
-			margin: var(--gap-xs) var(--gap-s);
-		}
-
 		.IngredientSelector > input[type=checkbox] + label::before {
-			content: "";
-			display: inline-block;
-			block-size: 1.5rem;
-			inline-size: 1.5rem;
-			margin-inline-end: var(--gap-xs);
-			border: 0.2rem solid hsl(var(--guideline-hsl));
-			--hover-background-color: transparent;
-		}
-
-		.IngredientSelector > input[type=checkbox] + label:hover::before,
-		.IngredientSelector > input[type=checkbox]:checked + label:hover::before {
-			border-color: hsl(var(--dark-primary-hsl));
-			background-color: var(--hover-background-color);
+			content: "Add";
 		}
 
 		.IngredientSelector > input[type=checkbox]:checked + label::before {
-			border-color: hsl(var(--primary-hsl));
-			background-color: hsl(var(--primary-hsl));
-			--hover-background-color: hsl(var(--dark-primary-hsl));
+			content: "Remove";
 		}
 	</style>
 {% endblock %}
@@ -89,9 +100,12 @@
 
 					{% for ingredient in ingredients %}
 						<div class="IngredientSelector">
+							<span>{{ ingredient.display_name }}</span>
+
 							<input id="ingredient{{ ingredient.pk }}" type="checkbox" name="ingredient{{ ingredient.pk }}" />
-							<label for="ingredient{{ ingredient.pk }}">{{ ingredient.display_name }}</label>
-							<!--a href="https://cosylab.iiitd.edu.in/flavordb/entity_details?id={{ ingredient.flavordb_id }}" target="_blank">flavordb</a-->
+							<label for="ingredient{{ ingredient.pk }}"></label>
+
+							<a href="https://cosylab.iiitd.edu.in/flavordb/entity_details?id={{ ingredient.flavordb_id }}" target="_blank" crossorigin="anonymous" referrerpolicy="no-referrer">FlavorDB</a>
 						</div>
 					{% endfor %}
 				</details>

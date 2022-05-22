@@ -9,6 +9,13 @@ from django.db import transaction
 
 from cookpot.ingredients.models import Ingredient, IngredientMolecule, IngredientName
 
+CATEGORY_MAPPINGS = {
+    "cereal": "cerealcrop-cereal",
+    "seed": "nutseed-seed",
+    "Plant": "plant",
+    "Vegatable": "vegetable",
+}
+
 
 class Command(BaseCommand):
     help = "Fetch ingredient information from FlavorDB."

@@ -8,13 +8,6 @@ class Ingredient(models.Model):
     In FlavorDB, this is an entity.
     """
 
-    CATEGORY_MAPPINGS = {
-        "cereal": "cerealcrop-cereal",
-        "seed": "nutseed-seed",
-        "Plant": "plant",
-        "Vegatable": "vegetable",
-    }
-
     class Category(models.TextChoices):
         UNCATEGORIZED = "uncategorized", _("Uncategorized")
         ADDITIVE = "additive", _("Additive")
