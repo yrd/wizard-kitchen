@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+
+{% block head %}
+	<style>
+		body {
+			display: grid;
+			grid-template-columns: minmax(20%, 40%) 1fr;
+			min-height: 100vh;
+  		padding: var(--gap-l);
+			background-image: url("https://wesbos.com/static/whitegrit-3c286f3a0990b91b9f6bb97828dd3d2f.png");
+			background-position: top center;
+			background-color: black;
+		}
+
+		.Main {
+			border-radius: 1.5rem;
+			box-shadow: 0.1rem 0.1rem 0.1rem rgba(0, 0, 0, 0.16);
+		}
+
+		.IngredientForm details {
+			margin-block: var(--gap-xs);
+			border: 1px solid hsla(var(--guideline-hsl), var(--hinted-opacity));
+			border-radius: 0.2rem;
+		}
+
+		.IngredientForm details > summary {
+			padding: var(--gap-xs) var(--gap-s);
+			font-size: var(--text-l);
+			color: hsla(var(--text-hsl), var(--hinted-opacity));
+		}
+
+		.IngredientForm details > summary::marker {
+			content: "";
+		}
+
+		.IngredientForm details[open] > summary {
+			font-weight: bold;
+			color: hsl(var(--color-hsl));
+		}
+
+		.IngredientForm details:not([open]) > summary:hover {
+			color: hsl(var(--primary-hsl), var(--hinted-opacity));
+		}
+
+		.IngredientSelector > input[type=checkbox] {
+			position: absolute;
+			opacity: 0;
+			pointer-events: none;
+		}
+
+		.IngredientSelector > input[type=checkbox] + label {
+			display: flex;
+			align-items: center;
+			margin: var(--gap-xs) var(--gap-s);
+		}
+
+		.IngredientSelector > input[type=checkbox] + label::before {
+			content: "";
+			display: inline-block;
+			block-size: 1.5rem;
+			inline-size: 1.5rem;
+			margin-inline-end: var(--gap-xs);
+			border: 0.2rem solid hsl(var(--guideline-hsl));
+			--hover-background-color: transparent;
+		}
+
+		.IngredientSelector > input[type=checkbox] + label:hover::before,
+		.IngredientSelector > input[type=checkbox]:checked + label:hover::before {
+			border-color: hsl(var(--dark-primary-hsl));
+			background-color: var(--hover-background-color);
+		}
+
+		.IngredientSelector > input[type=checkbox]:checked + label::before {
+			border-color: hsl(var(--primary-hsl));
+			background-color: hsl(var(--primary-hsl));
+			--hover-background-color: hsl(var(--dark-primary-hsl));
+		}
+	</style>
+{% endblock %}
+
+{% block body %}
+	<main class="Main">
+		<h1 class="Title">Cookpot</h1>
+
+		<div class="IngredientForm">
+			{% for ingredients in ingredient_library %}
+				<details>
+					<summary>{{ ingredients.0.category_label }}</summary>
+
+					{% for ingredient in ingredients %}
+						<div class="IngredientSelector">
+							<input id="ingredient{{ ingredient.pk }}" type="checkbox" name="ingredient{{ ingredient.pk }}" />
+							<label for="ingredient{{ ingredient.pk }}">{{ ingredient.display_name }}</label>
+							<!--a href="https://cosylab.iiitd.edu.in/flavordb/entity_details?id={{ ingredient.flavordb_id }}" target="_blank">flavordb</a-->
+						</div>
+					{% endfor %}
+				</details>
+			{% endfor %}
+		</div>
+	</main>
+{% endblock %}

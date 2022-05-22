@@ -1,0 +1,46 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Translations
+*.mo
+*.pot
+
+# Test output
+htmlcov/
+.coverage
+.coverage.*
+.hypothesis/
+.pytest_cache/
+.mypy_cache/
+
+# Environments
+.dev
+.env
+.env.bak
+.venv
+.venv.bak
+env/
+env.bak/
+venv/
+venv.bak/
+ENV/
+.python-version
+playground/*.private.env.json
+
+# Nix output
+result
+
+# Django-specific instance stuff
+local_settings.py
+db.sqlite3
+/data
+cookpot/cache
+
+# Documentation output
+/docs/_build/
+
+# Editor configurations
+.idea/
+.vscode/
