@@ -2,14 +2,11 @@
 
 {% block head %}
 	<style>
-		body {
+		.Container {
 			display: grid;
 			grid-template-columns: minmax(20%, 40%) 1fr;
-			min-height: 100vh;
+			gap: var(--gap-l);
   		padding: var(--gap-l);
-			background-image: url("https://wesbos.com/static/whitegrit-3c286f3a0990b91b9f6bb97828dd3d2f.png");
-			background-position: top center;
-			background-color: black;
 		}
 
 		.Main {
@@ -17,28 +14,49 @@
 			box-shadow: 0.1rem 0.1rem 0.1rem rgba(0, 0, 0, 0.16);
 		}
 
-		.IngredientForm details {
+		.Results {
+			border-radius: var(--radius-l);
+			background-color: white;
+		}
+
+		.Results.hidden {
+			opacity: 0;
+		}
+
+		.Results > ul {
+			position: sticky;
+			inset-block-start: 0;
+		}
+
+		.IngredientsForm details {
 			margin-block: var(--gap-xs);
 			border: 1px solid hsla(var(--guideline-hsl), var(--hinted-opacity));
 			border-radius: var(--radius-s);
 		}
 
-		.IngredientForm details > summary {
+		.IngredientsForm details > summary {
 			padding: var(--gap-xs) var(--gap-s);
 			font-size: var(--text-l);
 			color: hsla(var(--text-hsl), var(--hinted-opacity));
 			cursor: pointer;
 		}
 
-		.IngredientForm details > summary::marker {
+		.IngredientsForm details > summary > span {
+			float: right;
+			line-height: calc(var(--text-l) + 0.5rem);
+			font-size: var(--text-m);
+			color: hsl(var(--secondary-hsl));
+		}
+
+		.IngredientsForm details > summary::marker {
 			content: "";
 		}
 
-		.IngredientForm details[open] > summary {
+		.IngredientsForm details[open] > summary {
 			font-weight: bold;
 		}
 
-		.IngredientForm details:not([open]) > summary:hover {
+		.IngredientsForm details:not([open]) > summary:hover {
 			color: hsl(var(--primary-hsl), var(--hinted-opacity));
 		}
 
@@ -59,8 +77,8 @@
 
 		.IngredientSelector > label,
 		.IngredientSelector > a {
-			padding: var(--gap-xs) var(--gap-s);
 			border: 0.1rem solid hsl(var(--guideline-hsl));
+			padding: var(--gap-xs) var(--gap-s);
 			border-radius: var(--radius-s);
 			color: inherit;
 			text-decoration: none;
@@ -69,7 +87,7 @@
 
 		.IngredientSelector > label:hover,
 		.IngredientSelector > a:hover {
-			border-color: hsl(var(--primary-hsl));
+			border-color: currentColor;
 			color: hsl(var(--primary-hsl));
 		}
 
@@ -80,36 +98,113 @@
 		}
 
 		.IngredientSelector > input[type=checkbox] + label::before {
-			content: "Add";
+			content: "Select";
+		}
+
+		.IngredientSelector > input[type=checkbox]:checked + label:not(:hover) {
+			border-color: currentColor;
+			color: hsl(var(--secondary-hsl));
 		}
 
 		.IngredientSelector > input[type=checkbox]:checked + label::before {
-			content: "Remove";
+			content: "Selected";
+			font-weight: bold;
+		}
+
+		.IngredientsForm input[type=submit] {
+			display: block;
+			margin: var(--gap-m) auto;
+			border: 0.2rem solid hsl(var(--primary-hsl));
+			border-radius: var(--radius-s);
+			padding-inline: var(--gap-s);
+			line-height: 3rem;
+			background-color: transparent;
+		}
+
+		.IngredientsForm input[type=submit]:hover {
+			background-color: hsl(var(--primary-hsl));
+			color: white;
 		}
 	</style>
 {% endblock %}
 
 {% block body %}
-	<main class="Main">
-		<h1 class="Title">Cookpot</h1>
+	<main class="Container">
+		<div class="Main">
+			<h1 class="Title">Cookpot</h1>
 
-		<div class="IngredientForm">
-			{% for ingredients in ingredient_library %}
-				<details>
-					<summary>{{ ingredients.0.category_label }}</summary>
+			<form class="IngredientsForm" action="{% url "pairing_results" %}" method="post">
+				{% for ingredients in ingredient_library %}
+					<details>
+						<summary>{{ ingredients.0.category_label }}</summary>
 
-					{% for ingredient in ingredients %}
-						<div class="IngredientSelector">
-							<span>{{ ingredient.display_name }}</span>
+						{% for ingredient in ingredients %}
+							<div class="IngredientSelector">
+								<span>{{ ingredient.display_name }}</span>
 
-							<input id="ingredient{{ ingredient.pk }}" type="checkbox" name="ingredient{{ ingredient.pk }}" />
-							<label for="ingredient{{ ingredient.pk }}"></label>
+								<input id="ingredient{{ ingredient.pk }}" type="checkbox" name="ingredient{{ ingredient.pk }}" />
+								<label for="ingredient{{ ingredient.pk }}"></label>
 
-							<a href="https://cosylab.iiitd.edu.in/flavordb/entity_details?id={{ ingredient.flavordb_id }}" target="_blank" crossorigin="anonymous" referrerpolicy="no-referrer">FlavorDB</a>
-						</div>
-					{% endfor %}
-				</details>
-			{% endfor %}
+								<a href="https://cosylab.iiitd.edu.in/flavordb/entity_details?id={{ ingredient.flavordb_id }}" target="_blank" crossorigin="anonymous" referrerpolicy="no-referrer">FlavorDB</a>
+							</div>
+						{% endfor %}
+					</details>
+				{% endfor %}
+
+				{% csrf_token %}
+				<input type="submit" value="Pair!" />
+			</form>
+		</div>
+
+		<div class="Results hidden">
+
 		</div>
 	</main>
+
+	<script type="text/javascript">
+		const ingredientsForm = document.querySelector(".IngredientsForm")
+		const resultsElement = document.querySelector(".Results")
+		ingredientsForm.addEventListener("submit", (event) => {
+			event.preventDefault()
+
+			const formData = new FormData(ingredientsForm)
+			fetch(ingredientsForm.action, {
+        method: ingredientsForm.method,
+				body: formData,
+			}).then((response) => {
+				if (response.ok) {
+          response.text().then((text) => {
+            resultsElement.innerHTML = text
+						resultsElement.classList.remove("hidden")
+          })
+				} else {
+					// TODO
+					resultsElement.innerHTML = ""
+					resultsElement.classList.add("hidden")
+					console.error(response)
+				}
+			})
+		})
+
+		document.querySelectorAll(".IngredientsForm > details").forEach((detailsElement) => {
+      const summaryElement = detailsElement.querySelector("summary")
+      detailsElement.addEventListener("toggle", (event) => {
+        if (detailsElement.open) {
+          const spanElement = summaryElement.querySelector("span")
+					if (spanElement) {
+						spanElement.remove()
+					}
+				} else {
+          const selectedCount = detailsElement
+						.querySelectorAll("input[type=checkbox][name^=ingredient]:checked")
+						.length
+					if (selectedCount > 0) {
+            const spanElement = document.createElement("span")
+            spanElement.innerText = `${selectedCount} selected`
+            summaryElement.appendChild(spanElement)
+          }
+				}
+			})
+		})
+	</script>
 {% endblock %}

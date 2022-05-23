@@ -1,5 +1,19 @@
+from __future__ import annotations
+
 from django.db import models
 from django.utils.translation import gettext_lazy as _
+
+
+class IngredientQuerySet(models.QuerySet["Ingredient"]):
+    def annotate_display_name(self) -> IngredientQuerySet:
+        return self.annotate(
+            display_name=IngredientName.objects.filter(
+                ingredient=models.OuterRef("pk")
+            ).values("label")[:1]
+        )
+
+
+IngredientManager = models.Manager.from_queryset(IngredientQuerySet)
 
 
 class Ingredient(models.Model):
@@ -57,6 +71,8 @@ class Ingredient(models.Model):
         verbose_name=_("FlavorDB ID"),
         help_text=_("ID of the corresponding entity in the FlavorDB database."),
     )
+
+    objects = IngredientManager()
 
     class Meta:
         verbose_name = _("ingredient")

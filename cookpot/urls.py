@@ -11,6 +11,7 @@ from django.urls import path
 from .ingredients import views as ingredients_views
 
 urlpatterns = [
-    path("pairing/", ingredients_views.pairing_view),
+    path("pairing/", ingredients_views.pairing_view, name="pairing_view"),
+    path("pairing/results", ingredients_views.pairing_results, name="pairing_results"),
     path("admin/", admin.site.urls),
 ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
