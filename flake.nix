@@ -35,7 +35,10 @@
       }).withPackages pythonDependencies;
     in rec {
       packages = {
-        devEnv = python;
+        devEnv = pkgs.symlinkJoin {
+        	name = "cookpot-env";
+        	paths = [ python pkgs.nodePackages.sass pkgs.nodePackages.prettier ];
+        };
 
         requirementsFile = let
           pythonWithPip = python.withPackages (pythonPackages:

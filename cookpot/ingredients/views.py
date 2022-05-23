@@ -16,15 +16,19 @@ def pairing_view(request: HttpRequest) -> HttpResponse:
     for (category,) in (
         Ingredient.objects.values_list("category").distinct().order_by("category")
     ):
-        ingredients = (
+        ingredients = list(
             Ingredient.objects.filter(category=category)
             .annotate_display_name()
             .order_by("display_name")
         )
-        ingredient_library.append(list(ingredients))
+        while len(ingredients) > 0:
+            ingredient_library.append(ingredients[:17])
+            ingredients = ingredients[17:]
 
     return render(
-        request, "pairing_view.html", {"ingredient_library": ingredient_library}
+        request,
+        "pairing_view.html",
+        {"ingredient_library": enumerate(ingredient_library)},
     )
 
 

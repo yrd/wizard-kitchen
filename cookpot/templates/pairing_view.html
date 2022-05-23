@@ -1,7 +1,7 @@
 {% extends "base.html" %}
 
 {% block head %}
-	<style>
+	<!--style>
 		.Container {
 			display: grid;
 			grid-template-columns: minmax(20%, 40%) 1fr;
@@ -125,86 +125,75 @@
 			background-color: hsl(var(--primary-hsl));
 			color: white;
 		}
-	</style>
+	</style-->
 {% endblock %}
 
 {% block body %}
-	<main class="Container">
-		<div class="Main">
-			<h1 class="Title">Cookpot</h1>
+	<div class="Container">
+		<header class="Infos">
+				<h1 class="Title">Cookpot</h1>
+		</header>
 
-			<form class="IngredientsForm" action="{% url "pairing_results" %}" method="post">
-				{% for ingredients in ingredient_library %}
-					<details>
-						<summary>{{ ingredients.0.category_label }}</summary>
+		<main class="Results">
+			Results
+		</main>
 
-						{% for ingredient in ingredients %}
-							<div class="IngredientSelector">
-								<span>{{ ingredient.display_name }}</span>
+		<div class="Cards">
+			{% for index, ingredients in ingredient_library %}
+				<input id="selectedcategory-{{ index }}" name="selectedcategory" type="radio" value="{{ category }}" />
+				<label class="CategorySelector" for="selectedcategory-{{ index }}">
+					{{ ingredients.0.category_label }}
+				</label>
 
-								<input id="ingredient{{ ingredient.pk }}" type="checkbox" name="ingredient{{ ingredient.pk }}" />
-								<label for="ingredient{{ ingredient.pk }}"></label>
-
-								<a href="https://cosylab.iiitd.edu.in/flavordb/entity_details?id={{ ingredient.flavordb_id }}" target="_blank" crossorigin="anonymous" referrerpolicy="no-referrer">FlavorDB</a>
+				{% if ingredients|length > 1 %}
+					<div class="CardFan" style="--card-count: {{ ingredients|length }}">
+				{% else %}
+					<div class="CardFan single">
+				{% endif %}
+					{% for ingredient in ingredients %}
+						<input id="ingredient{{ ingredient.pk }}" type="checkbox" name="ingredient{{ ingredient.pk }}" />
+						<label for="ingredient{{ ingredient.pk }}">
+							<div class="IngredientCard">
+								{{ ingredient.display_name }}
 							</div>
-						{% endfor %}
-					</details>
-				{% endfor %}
-
-				{% csrf_token %}
-				<input type="submit" value="Pair!" />
-			</form>
+							<div class="IngredientPlaceholder">
+								{{ ingredient.display_name }}
+							</div>
+						</label>
+					{% endfor %}
+				</div>
+			{% endfor %}
 		</div>
+	</div>
 
-		<div class="Results hidden">
-
-		</div>
+{#	<main class="Container">#}
+{#		<div class="Main">#}
+{##}
+{#			<form class="IngredientsForm" action="{% url "pairing_results" %}" method="post">#}
+{#				{% for ingredients in ingredient_library %}#}
+{#					<details>#}
+{#						<summary>{{ ingredients.0.category_label }}</summary>#}
+{##}
+{#						{% for ingredient in ingredients %}#}
+{#							<div class="IngredientSelector">#}
+{#								<span>{{ ingredient.display_name }}</span>#}
+{##}
+{#								<input id="ingredient{{ ingredient.pk }}" type="checkbox" name="ingredient{{ ingredient.pk }}" />#}
+{#								<label for="ingredient{{ ingredient.pk }}"></label>#}
+{##}
+{#								<a href="https://cosylab.iiitd.edu.in/flavordb/entity_details?id={{ ingredient.flavordb_id }}" target="_blank" crossorigin="anonymous" referrerpolicy="no-referrer">FlavorDB</a>#}
+{#							</div>#}
+{#						{% endfor %}#}
+{#					</details>#}
+{#				{% endfor %}#}
+{##}
+{#				{% csrf_token %}#}
+{#				<input type="submit" value="Pair!" />#}
+{#			</form>#}
+{#		</div>#}
+{##}
+{#		<div class="Results hidden">#}
+{##}
+{#		</div>#}
 	</main>
-
-	<script type="text/javascript">
-		const ingredientsForm = document.querySelector(".IngredientsForm")
-		const resultsElement = document.querySelector(".Results")
-		ingredientsForm.addEventListener("submit", (event) => {
-			event.preventDefault()
-
-			const formData = new FormData(ingredientsForm)
-			fetch(ingredientsForm.action, {
-        method: ingredientsForm.method,
-				body: formData,
-			}).then((response) => {
-				if (response.ok) {
-          response.text().then((text) => {
-            resultsElement.innerHTML = text
-						resultsElement.classList.remove("hidden")
-          })
-				} else {
-					// TODO
-					resultsElement.innerHTML = ""
-					resultsElement.classList.add("hidden")
-					console.error(response)
-				}
-			})
-		})
-
-		document.querySelectorAll(".IngredientsForm > details").forEach((detailsElement) => {
-      const summaryElement = detailsElement.querySelector("summary")
-      detailsElement.addEventListener("toggle", (event) => {
-        if (detailsElement.open) {
-          const spanElement = summaryElement.querySelector("span")
-					if (spanElement) {
-						spanElement.remove()
-					}
-				} else {
-          const selectedCount = detailsElement
-						.querySelectorAll("input[type=checkbox][name^=ingredient]:checked")
-						.length
-					if (selectedCount > 0) {
-            const spanElement = document.createElement("span")
-            spanElement.innerText = `${selectedCount} selected`
-            summaryElement.appendChild(spanElement)
-          }
-				}
-			})
-		})
-	</script>
 {% endblock %}
