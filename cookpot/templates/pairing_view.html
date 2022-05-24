@@ -1,137 +1,17 @@
 {% extends "base.html" %}
 
-{% block head %}
-	<!--style>
-		.Container {
-			display: grid;
-			grid-template-columns: minmax(20%, 40%) 1fr;
-			gap: var(--gap-l);
-  		padding: var(--gap-l);
-		}
-
-		.Main {
-			border-radius: var(--radius-l);
-			box-shadow: 0.1rem 0.1rem 0.1rem rgba(0, 0, 0, 0.16);
-		}
-
-		.Results {
-			border-radius: var(--radius-l);
-			background-color: white;
-		}
-
-		.Results.hidden {
-			opacity: 0;
-		}
-
-		.Results > ul {
-			position: sticky;
-			inset-block-start: 0;
-		}
-
-		.IngredientsForm details {
-			margin-block: var(--gap-xs);
-			border: 1px solid hsla(var(--guideline-hsl), var(--hinted-opacity));
-			border-radius: var(--radius-s);
-		}
-
-		.IngredientsForm details > summary {
-			padding: var(--gap-xs) var(--gap-s);
-			font-size: var(--text-l);
-			color: hsla(var(--text-hsl), var(--hinted-opacity));
-			cursor: pointer;
-		}
-
-		.IngredientsForm details > summary > span {
-			float: right;
-			line-height: calc(var(--text-l) + 0.5rem);
-			font-size: var(--text-m);
-			color: hsl(var(--secondary-hsl));
-		}
-
-		.IngredientsForm details > summary::marker {
-			content: "";
-		}
-
-		.IngredientsForm details[open] > summary {
-			font-weight: bold;
-		}
-
-		.IngredientsForm details:not([open]) > summary:hover {
-			color: hsl(var(--primary-hsl), var(--hinted-opacity));
-		}
-
-		.IngredientSelector {
-			display: flex;
-			align-items: center;
-			gap: var(--gap-s);
-			padding: var(--gap-xs) var(--gap-s);
-		}
-
-		.IngredientSelector:not(:last-of-type) {
-			border-block-end: 1px solid hsla(var(--guideline-hsl), var(--hinted-opacity));
-		}
-
-		.IngredientSelector > span {
-			flex-grow: 1;
-		}
-
-		.IngredientSelector > label,
-		.IngredientSelector > a {
-			border: 0.1rem solid hsl(var(--guideline-hsl));
-			padding: var(--gap-xs) var(--gap-s);
-			border-radius: var(--radius-s);
-			color: inherit;
-			text-decoration: none;
-			cursor: pointer;
-		}
-
-		.IngredientSelector > label:hover,
-		.IngredientSelector > a:hover {
-			border-color: currentColor;
-			color: hsl(var(--primary-hsl));
-		}
-
-		.IngredientSelector > input[type=checkbox] {
-			position: absolute;
-			opacity: 0;
-			pointer-events: none;
-		}
-
-		.IngredientSelector > input[type=checkbox] + label::before {
-			content: "Select";
-		}
-
-		.IngredientSelector > input[type=checkbox]:checked + label:not(:hover) {
-			border-color: currentColor;
-			color: hsl(var(--secondary-hsl));
-		}
-
-		.IngredientSelector > input[type=checkbox]:checked + label::before {
-			content: "Selected";
-			font-weight: bold;
-		}
-
-		.IngredientsForm input[type=submit] {
-			display: block;
-			margin: var(--gap-m) auto;
-			border: 0.2rem solid hsl(var(--primary-hsl));
-			border-radius: var(--radius-s);
-			padding-inline: var(--gap-s);
-			line-height: 3rem;
-			background-color: transparent;
-		}
-
-		.IngredientsForm input[type=submit]:hover {
-			background-color: hsl(var(--primary-hsl));
-			color: white;
-		}
-	</style-->
-{% endblock %}
-
 {% block body %}
 	<div class="Container">
 		<header class="Infos">
-				<h1 class="Title">Cookpot</h1>
+			<h1 class="Title">cookpot.app</h1>
+			<p>
+				Here, you can experiment with different cooking ingredients and see what might go together.
+				Results are based on how many taste molecules are shared by the components of your recipe!
+			</p>
+			<p>
+				Start by selecting a category down below.
+				Then, use the cards to build your recipe.
+			</p>
 		</header>
 
 		<main class="Results">
@@ -253,7 +133,15 @@
 				</div>
 			{% endfor %}
 		</div>
+
+		<div class="Attribution">
+			<p>
+				The data behind this project is freely available from <a href="https://cosylab.iiitd.edu.in/flavordb/" target="_blank" referrerpolicy="no-referrer" crossorigin="anonymous">FlavorDB</a>.
+				It is used in accordance with the <a href="http://creativecommons.org/licenses/by-nc-sa/3.0/" target="_blank" referrerpolicy="no-referrer" crossorigin="anonymous">CC BY-NC-SA 3.0</a> license.
+			</p>
+		</div>
 	</div>
+
 
 {#	<main class="Container">#}
 {#		<div class="Main">#}

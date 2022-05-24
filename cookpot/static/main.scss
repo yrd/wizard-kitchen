@@ -9,6 +9,7 @@
   --radius-s: 0.2rem;
   --text-l: 1.2rem;
   --text-m: 1rem;
+  --text-s: 0.8rem;
   --text-hsl: 0, 0%, 3%;
   --guideline-hsl: 19, 7%, 76%;
   --primary-hsl: 38, 92%, 47%;
@@ -17,22 +18,6 @@
   --hinted-opacity: 0.7;
 	--subtle-motion: 0.15s cubic-bezier(.37,.18,.29,1.03);
 	--prominent-motion: 0.6s cubic-bezier(.05,.95,.12,.93);
-}
-
-@font-face {
-  font-family: "Grandstander";
-  font-style: normal;
-  font-weight: 400;
-  font-display: swap;
-  src: url("fonts/Grandstander.ttf") format("woff2");
-}
-
-@font-face {
-  font-family: "Grandstander";
-  font-style: italic;
-  font-weight: 400;
-  font-display: swap;
-  src: url("fonts/Grandstander-Italic.ttf") format("woff2");
 }
 
 *, *::before, *::after {
@@ -51,10 +36,15 @@ body {
   font-family: Grandstander, Cantarell, Roboto, sans-serif;
   -webkit-font-smoothing: antialiased;
   background-image: radial-gradient(ellipse at 20% 20%, hsl(240, 14%, 15%) 0%, hsl(240, 15%, 26%) 0%);
+	color: hsl(0, 0%, 90%);
 }
 
 input, button, textarea, select {
   font: inherit;
+}
+
+:any-link {
+	color: hsl(var(--primary-hsl));
 }
 
 /**
@@ -63,13 +53,14 @@ input, button, textarea, select {
 
 .Container {
   display: grid;
-  grid-template: "infos results" 1fr
-    "cards cards" auto / auto 1fr;
+  grid-template: "header results" 1fr
+		"footer results" auto
+    "cards cards" auto / 40rem 1fr;
   gap: var(--gap-l);
   height: 100vh;
 
-  > .Header {
-    grid-area: infos;
+  > .Infos {
+    grid-area: header;
   }
 
   > .Results {
@@ -79,14 +70,29 @@ input, button, textarea, select {
   > .Cards {
     grid-area: cards;
   }
+
+  > .Attribution {
+    grid-area: footer;
+  }
+}
+
+.Infos {
+	padding: var(--gap-s) var(--gap-l);
+}
+
+.Attribution {
+	padding: var(--gap-s) var(--gap-l);
+	font-size: var(--text-s);
 }
 
 .Title {
   margin-block: var(--gap-l);
   line-height: 4vmin;
   font-size: 4vmin;
-  font-weight: 900;
+  font-weight: bolder;
+	text-transform: uppercase;
   text-align: center;
+	text-shadow: 0.1rem 0.1rem 0.2rem hsl(var(--primary-hsl), 0.4);
   color: hsl(var(--primary-hsl));
 }
 
