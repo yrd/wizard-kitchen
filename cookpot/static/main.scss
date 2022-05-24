@@ -47,6 +47,10 @@ input, button, textarea, select {
 	color: hsl(var(--primary-hsl));
 }
 
+.NoScript {
+	color: #e55e40;
+}
+
 /**
  * Layout and main UI
  */
@@ -208,7 +212,7 @@ $inline-card-size: 8rem;
 		> * {
 			position: absolute;
 			transition: transform var(--prominent-motion), opacity var(--subtle-motion);
-  		pointer-events: none;
+			pointer-events: none;
 		}
 
 		@for $i from 0 through 98 {
@@ -220,23 +224,22 @@ $inline-card-size: 8rem;
 					// rightmost. For the center card it will be zero.
 					--factor: calc(#{$i} / (var(--card-count) - 1) * 2 - 1);
 					--abs-factor: max(var(--factor), -1 * var(--factor));
-					transform:
-						translateY(calc((3rem + 0.2rem * var(--card-count)) * var(--abs-factor) - 2rem))
-						rotate(calc(40deg * var(--factor)));
+					transform: translateY(calc((3rem + 0.2rem * var(--card-count)) * var(--abs-factor) - 2rem)) rotate(calc(40deg * var(--factor)));
 				}
 			}
 		}
+	}
 
-		&:hover {
-			z-index: 2;
+	> label:hover,
+	> input:focus + label {
+		z-index: 2;
 
-			> * {
-				transform:
-					translateX(calc(#{-0.5 * $inline-card-size} * var(--factor)))
-					translateY(#{-0.75 * $block-card-size})
-					rotate(0deg) scale(2);
-				transition-duration: 0s;
-			}
+		> * {
+			transform:
+				translateX(calc(#{-0.5 * $inline-card-size} * var(--factor)))
+				translateY(#{-0.75 * $block-card-size})
+				rotate(0deg) scale(2);
+			transition-duration: 0s;
 		}
 	}
 
@@ -284,6 +287,7 @@ $inline-card-size: 8rem;
 	overflow: hidden;
 
 	@at-root {
+		input:focus + label > .IngredientCard,
 		:hover > .IngredientCard {
 			@keyframes IngredientCard-hover {
 				0% {

@@ -4,6 +4,10 @@
 	<div class="Container">
 		<header class="Infos">
 			<h1 class="Title">cookpot.app</h1>
+			<p class="NoScript">
+				<strong>Heads up!</strong>
+				JavaScript seems to be disabled in your browser, so this site probably won't work the way you expect.
+			</p>
 			<p>
 				Here, you can experiment with different cooking ingredients and see what might go together.
 				Results are based on how many taste molecules are shared by the components of your recipe!
@@ -106,27 +110,6 @@
 			</svg>
 
 			<ul class="SelectedIngredients">
-				<li>
-					<button>Hi</button>
-				</li>
-				<li>
-					<button>fasdbfasdb</button>
-				</li>
-				<li>
-					<button>fasdbfasdb</button>
-				</li>
-				<li>
-					<button>fasdbfasdb</button>
-				</li>
-				<li>
-					<button>fasdbfasdb</button>
-				</li>
-				<li>
-					<button>fasdbfasdb</button>
-				</li>
-				<li>
-					<button>fasdbfasdb</button>
-				</li>
 			</ul>
 		</div>
 
@@ -153,8 +136,11 @@
 
 
 	<script type="text/javascript">
+		document.querySelectorAll(".NoScript")
+			.forEach((element) => element.remove())
+
 		document.querySelectorAll("input[name=selectedsection]").forEach((selectedSectionInput) => {
-			selectedSectionInput.addEventListener("input", () => {
+			selectedSectionInput.addEventListener("input", async () => {
 				if (!selectedSectionInput.checked) {
 					return
 				}
@@ -171,26 +157,64 @@
 						.forEach((element) => element.disabled = false)
 				}
 
-				fetch(`{% url "section_cards" %}?section=${encodeURIComponent(selectedSectionInput.value)}`)
-					.then((response) => response.text())
-					.then((text) => {
-						const template = document.createElement("template")
-						template.innerHTML = text
+				const response = await fetch(`{% url "section_cards" %}?section=${encodeURIComponent(selectedSectionInput.value)}`)
+				if (!response.ok) {
+					alert(`Error: could not get ingredients. Sorry!`)
+					finish()
+					return
+				}
+				const text = await response.text()
 
-						const cardsElement = document.querySelector(".Cards")
-						for (const element of template.content.children) {
-							const clone = element.cloneNode(true)
-							cardsElement.append(clone)
+				const template = document.createElement("template")
+				template.innerHTML = text
+
+				const cardsElement = document.querySelector(".Cards")
+				for (const element of template.content.children) {
+					const clone = element.cloneNode(true)
+					cardsElement.append(clone)
+				}
+
+				// Make sure the inputs for the already selected ingredients are also
+				// selected.
+				for (const element of document.querySelectorAll(".SelectedIngredients [data-ingredient]")) {
+					const checkbox = document.querySelector(`.Cards input[type=checkbox][data-ingredient="${encodeURIComponent(element.dataset.ingredient)}"]`)
+					if (checkbox) {
+						checkbox.checked = true
+					}
+				}
+
+				for (const checkbox of document.querySelectorAll(".Cards input[type=checkbox][data-ingredient]")) {
+					const ingredientSelector = `[data-ingredient="${encodeURIComponent(checkbox.dataset.ingredient)}"]`;
+
+					checkbox.addEventListener("input", () => {
+						checkbox.blur()
+
+						if (checkbox.checked) {
+							const listItem = document.createElement("li")
+							const button = document.createElement("button")
+							button.dataset.ingredient = checkbox.dataset.ingredient
+							button.innerText = checkbox.dataset.label
+							listItem.append(button)
+							document.querySelector(".SelectedIngredients").append(listItem)
+
+							button.addEventListener("click", () => {
+								button.parentElement.remove()
+								const checkbox = document.querySelector(`.Cards input[type=checkbox]${ingredientSelector}`);
+								if (checkbox) {
+									checkbox.checked = false;
+								}
+							})
+						} else {
+							document
+								.querySelector(`.SelectedIngredients > li > button${ingredientSelector}`)
+								.parentElement
+								.remove()
 						}
+					})
+				}
 
-						document.querySelector("input[name=selectedcategory]").checked = true
-						finish()
-					})
-					.catch((error) => {
-						console.error(error)
-						alert(`Error: ${error}`)
-						finish()
-					})
+				document.querySelector("input[name=selectedcategory]").checked = true
+				finish()
 			})
 		})
 	</script>

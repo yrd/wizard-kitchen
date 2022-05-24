@@ -8,7 +8,13 @@
 		<div class="CardFan single">
 	{% endif %}
 		{% for ingredient in ingredients %}
-			<input id="ingredient{{ ingredient.pk }}" type="checkbox" name="ingredient{{ ingredient.pk }}" />
+			<input
+				id="ingredient{{ ingredient.pk }}"
+				type="checkbox"
+				name="ingredient{{ ingredient.pk }}"
+				data-ingredient="{{ ingredient.pk }}"
+				data-label="{{ ingredient.display_name }}"
+			/>
 			<label for="ingredient{{ ingredient.pk }}">
 				<div class="IngredientCard">
 					{{ ingredient.display_name }}
