@@ -335,3 +335,95 @@ $inline-card-size: 8rem;
 	background-color: hsl(240, 15%, 26%);
 	color: white;
 }
+
+/**
+ * Cauldron
+ */
+
+.Cauldron {
+	display: inline-block;
+	margin: 0 auto;
+
+	> svg {
+		block-size: 50vh;
+		filter: drop-shadow(0rem 2rem 3rem hsla(0, 0%, 0%, 0.5));
+
+		%Outline {
+			stroke: #222222;
+			stroke-width: 0.1rem;
+		}
+
+		.cauldron {
+			@extend %Outline;
+		}
+
+		.cauldron-neck {
+			fill: #666666;
+		}
+
+		.cauldron-top {
+			fill: #b0b0b0;
+		}
+
+		#cauldron-body-fill {
+			:first-child {
+				stop-color: #b0b0b0;
+			}
+
+			:last-child {
+				stop-color: #655c5b;
+			}
+		}
+
+		.cauldron-dirt {
+			fill-opacity: 0.2;
+
+			> :nth-child(1) {
+				fill: #735845;
+			}
+
+			> :nth-child(2) {
+				fill: #77533c;
+			}
+
+			> :nth-child(3) {
+				fill: #724e41;
+			}
+		}
+
+		.cauldron-content {
+			@keyframes Cauldron-content-move {
+				@for $i from 0 through 100 {
+					#{$i / 100 * 100%} {
+						$offset: $i / 100 * 2 * math.$pi;
+						transform:
+							translateX(#{math.sin($offset) * 2rem})
+							translateY(#{math.cos($offset) * 0.5rem})
+							rotate(#{math.sin($offset) * 5deg});
+					}
+				}
+			}
+
+			> :nth-child(1) {
+				fill: #78dc3e;
+			}
+
+			> :nth-child(2) {
+				fill: #c0e143;
+				mix-blend-mode: overlay;
+				animation: Cauldron-content-move 9s linear 0s infinite;
+			}
+
+			> :nth-child(3) {
+				fill: #aaea37;
+				mix-blend-mode: overlay;
+				animation: Cauldron-content-move 10s linear 0s infinite reverse;
+			}
+		}
+
+		.cauldron-content-rim {
+			@extend %Outline;
+			fill: none;
+		}
+	}
+}
