@@ -1,3 +1,4 @@
+import math
 import re
 
 from django.db import models
@@ -21,9 +22,12 @@ def pairing_view(request: HttpRequest) -> HttpResponse:
             .annotate_display_name()
             .order_by("display_name")
         )
+        # Make equally-sized groups of at most 17 items.
+        group_count = math.ceil(len(ingredients) / 17)
+        group_size = math.ceil(len(ingredients) / group_count)
         while len(ingredients) > 0:
-            ingredient_library.append(ingredients[:17])
-            ingredients = ingredients[17:]
+            ingredient_library.append(ingredients[:group_size])
+            ingredients = ingredients[group_size:]
 
     return render(
         request,
