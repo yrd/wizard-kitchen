@@ -344,6 +344,8 @@ $inline-card-size: 8rem;
 	display: inline-block;
 	margin: 0 auto;
 
+	--hue: 100;
+
 	> svg {
 		block-size: 50vh;
 		filter: drop-shadow(0rem 2rem 3rem hsla(0, 0%, 0%, 0.5));
@@ -353,30 +355,33 @@ $inline-card-size: 8rem;
 			stroke-width: 0.1rem;
 		}
 
-		.cauldron {
+		.cauldron-body {
 			@extend %Outline;
 		}
 
 		.cauldron-neck {
+			@extend %Outline;
 			fill: #666666;
 		}
 
 		.cauldron-top {
+			@extend %Outline;
 			fill: #b0b0b0;
 		}
 
 		#cauldron-body-fill {
-			:first-child {
+			> stop:first-child {
 				stop-color: #b0b0b0;
 			}
 
-			:last-child {
+			> stop:last-child {
 				stop-color: #655c5b;
 			}
 		}
 
 		.cauldron-dirt {
 			fill-opacity: 0.2;
+			pointer-events: none;
 
 			> :nth-child(1) {
 				fill: #735845;
@@ -392,10 +397,12 @@ $inline-card-size: 8rem;
 		}
 
 		.cauldron-content {
+			pointer-events: none;
+
 			@keyframes Cauldron-content-move {
 				@for $i from 0 through 100 {
-					#{$i / 100 * 100%} {
-						$offset: $i / 100 * 2 * math.$pi;
+					#{$i * 0.01 * 100%} {
+						$offset: $i * 0.01 * 2 * math.$pi;
 						transform:
 							translateX(#{math.sin($offset) * 2rem})
 							translateY(#{math.cos($offset) * 0.5rem})
@@ -405,17 +412,17 @@ $inline-card-size: 8rem;
 			}
 
 			> :nth-child(1) {
-				fill: #78dc3e;
+				fill: hsl(var(--hue), 40%, 40%);
 			}
 
 			> :nth-child(2) {
-				fill: #c0e143;
+				fill: hsl(var(--hue), 100%, 80%);
 				mix-blend-mode: overlay;
 				animation: Cauldron-content-move 9s linear 0s infinite;
 			}
 
 			> :nth-child(3) {
-				fill: #aaea37;
+				fill: hsl(var(--hue), 90%, 90%);
 				mix-blend-mode: overlay;
 				animation: Cauldron-content-move 10s linear 0s infinite reverse;
 			}
@@ -424,6 +431,130 @@ $inline-card-size: 8rem;
 		.cauldron-content-rim {
 			@extend %Outline;
 			fill: none;
+		}
+
+		.flares {
+			stroke-width: 0.3rem;
+			stroke-linecap: round;
+			stroke-dashoffset: 300;
+			fill: none;
+			filter: blur(0.5rem);
+
+			@for $i from 1 through 4 {
+				> :nth-child(#{$i}) {
+					stroke: hsl(var(--hue), #{20% + $i * 15%}, 55%);
+					stroke-dasharray:
+						#{math.random(20) + 15}  // Dash
+						#{math.random(40) + 80}  // Space
+						#{math.random(20) + 15}  // Dash
+						#{math.random(40) + 80}  // Space
+						#{math.random(20) + 15}  // Dash
+						1000;
+				}
+			}
+		}
+
+		.cauldron {
+			transform-origin: 50% 80%;
+			transition: transform var(--subtle-motion);
+
+			&:hover {
+				@keyframes Cauldron-dangle {
+					0% { transform: scale(1.1) rotate(0); }
+					25% { transform: scale(1.1) rotate(2.1deg); }
+					50% { transform: scale(1.1) rotate(0.3deg); }
+					70% { transform: scale(1.1) rotate(-1.4deg); }
+					100% { transform: scale(1.1) rotate(0); }
+				}
+
+				transform: scale(1.1);
+				animation: Cauldron-dangle 3s ease-in-out 0.2s infinite;
+
+				~ .flares {
+					@keyframes Cauldron-flare {
+						0% { stroke-dashoffset: 310; }
+						100% { stroke-dashoffset: -310; }
+					}
+
+					animation: Cauldron-flare 2s ease-out forwards;
+				}
+
+				~ .fire {
+					opacity: 0;
+				}
+			}
+		}
+
+		.wood {
+			> .log {
+				@extend %Outline;
+				fill: #825419;
+			}
+
+			> .log-face {
+				@extend %Outline;
+				fill: #e8a53e;
+			}
+
+			> .scratch {
+				stroke: #b57b18;
+				stroke-width: 0.18rem;
+				stroke-linecap: round;
+				fill: none;
+			}
+		}
+
+		.fire {
+			@keyframes Cauldron-fire {
+				0% { transform: none; }
+				@for $j from 1 through 9 {
+					#{10% * $j} {
+						transform:
+							skewX(#{math.random() * 1.4deg - 0.7deg});
+					}
+				}
+				100% { transform: none; }
+			}
+
+			filter: drop-shadow(0 0 0 black);
+			pointer-events: none;
+			transform-origin: 50% 100%;
+			transition: opacity var(--subtle-motion);
+			animation: Cauldron-fire 3s linear 0s infinite;
+
+			> .base {
+				@extend %Outline;
+				stroke: #462c1f;
+			}
+
+			> .spark {
+				fill: #f1ef3e;
+				fill-opacity: 0.6;
+			}
+		}
+
+		#fire-base-fill {
+			> stop:first-child {
+				@keyframes Cauldron-fire-color-1 {
+					0% { stop-color: hsl(41, 94%, 50%); }
+					40% { stop-color: hsl(43, 95%, 62%); }
+					60% { stop-color: hsl(49, 73%, 62%); }
+					80% { stop-color: hsl(37, 79%, 55%); }
+					100% { stop-color: hsl(41, 94%, 50%); }
+				}
+				animation: Cauldron-fire-color-1 8s linear 0s infinite;
+			}
+
+			> stop:last-child {
+				@keyframes Cauldron-fire-color-2 {
+					0% { stop-color: hsl(29, 74%, 44%); }
+					40% { stop-color: hsl(25, 84%, 39%); }
+					60% { stop-color: hsl(20, 73%, 41%); }
+					80% { stop-color: hsl(17, 83%, 47%); }
+					100% { stop-color: hsl(29, 74%, 44%); }
+				}
+				animation: Cauldron-fire-color-2 11s linear 0s infinite;
+			}
 		}
 	}
 }
