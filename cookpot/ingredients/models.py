@@ -23,6 +23,9 @@ class Ingredient(models.Model):
     """
 
     class Category(models.TextChoices):
+        # Some of these are presentational, which means no upstream data has this
+        # value. They are just here so that we have translations for the parent
+        # category.
         UNCATEGORIZED = "uncategorized", _("Uncategorized")
         ADDITIVE = "additive", _("Additive")
         ANIMAL_PRODUCT = "animalproduct", _("Animal products")
@@ -30,11 +33,13 @@ class Ingredient(models.Model):
         BEVERAGE = "beverage", _("Beverages")
         BEVERAGE_ALCOHOLIC = "beverage-alcoholic", _("Alcohol")
         BEVERAGE_CAFFEINATED = "beverage-caffeinated", _("Caffeine")
+        CEREALCROP = "cerealcrop", _("Cereals")
         CEARALCROP_CEREAL = "cerealcrop-cereal", _("Cereal")
         CEREALCROP_MAIZE = "cerealcrop-maize", _("Maize")
         DAIRY = "dairy", _("Dairy")
         DISH = "dish", _("Dishes")
         ESSENTIAL_OIL = "essentialoil", _("Essential oils")
+        FISHSEAFOOD = "fishseafood", _("Fish & seafood")  # Presentational
         FISHSEAFOOD_FISH = "fishseafood-fish", _("Fish")
         FISHSEAFOOD_SEAFOOD = "fishseafood-seafood", _("Seafood")
         FLOWER = "flower", _("Flowers")
@@ -45,6 +50,7 @@ class Ingredient(models.Model):
         FUNGUS = "fungus", _("Fungi")
         HERB = "herb", _("Herbs")
         MEAT = "meat", _("Meat")
+        NUTSEED = "nutseed", _("Nuts & seeds")  # Presentational
         NUTSEED_LEGUME = "nutseed-legume", _("Legumes")
         NUTSEED_NUT = "nutseed-nut", _("Nuts")
         NUTSEED_SEED = "nutseed-seed", _("Seeds")
@@ -58,6 +64,13 @@ class Ingredient(models.Model):
         VEGETABLE_ROOT = "vegetable-root", _("Root Vegetables")
         VEGETABLE_STEM = "vegetable-stem", _("Vegetable Stems")
         VEGETABLE_TUBER = "vegetable-tuber", _("Tuber Vegetables")
+
+        @classmethod
+        def get_label(cls, category_key: str) -> str:
+            for key, label in cls.choices:
+                if key == category_key:
+                    return label
+            return category_key
 
     category = models.CharField(
         max_length=30,
@@ -80,10 +93,7 @@ class Ingredient(models.Model):
 
     @property
     def category_label(self) -> str:
-        for key, label in self.Category.choices:
-            if key == self.category:
-                return label
-        return self.category
+        return self.Category.get_label(self.category)
 
 
 class IngredientName(models.Model):

@@ -2,38 +2,81 @@ import math
 import re
 
 from django.db import models
-from django.http import HttpRequest, HttpResponse, HttpResponseNotAllowed
+from django.http import (
+    HttpRequest,
+    HttpResponse,
+    HttpResponseBadRequest,
+    HttpResponseNotAllowed,
+)
 from django.shortcuts import render
 
 from .models import Ingredient, IngredientMolecule
 
 
-def pairing_view(request: HttpRequest) -> HttpResponse:
+def index(request: HttpRequest) -> HttpResponse:
     if request.method != "GET":
         return HttpResponseNotAllowed(permitted_methods=["GET"])
 
-    ingredient_library = list[list[Ingredient]]()
-
+    sections = set[str]()
     for (category,) in (
         Ingredient.objects.values_list("category").distinct().order_by("category")
     ):
-        ingredients = list(
-            Ingredient.objects.filter(category=category)
-            .annotate_display_name()
-            .order_by("display_name")
-        )
-        # Make equally-sized groups of at most 17 items.
-        group_count = math.ceil(len(ingredients) / 17)
-        group_size = math.ceil(len(ingredients) / group_count)
-        while len(ingredients) > 0:
-            ingredient_library.append(ingredients[:group_size])
-            ingredients = ingredients[group_size:]
+        sections.add(category.split("-")[0])
+
+    sections_with_labels = [
+        (key, Ingredient.Category.get_label(key)) for key in sorted(sections)
+    ]
 
     return render(
         request,
-        "pairing_view.html",
-        {"ingredient_library": enumerate(ingredient_library)},
+        "index.html",
+        {
+            "sections": sections_with_labels,
+            # This is the number of sections missing to fill the column. A spacer will
+            # be rendered for each of these so that the category selectors begin at the
+            # top again. Keep this in sync with the stylesheet.
+            "missing_sections": range(10 - len(sections_with_labels) % 10),
+        },
     )
+
+
+def section_cards(request: HttpRequest) -> HttpResponse:
+    if request.method != "GET":
+        return HttpResponseNotAllowed(permitted_methods=["GET"])
+    if not (section := request.GET.get("section", "")):
+        return HttpResponseBadRequest()
+    assert isinstance(section, str)
+
+    all_ingredients = list(
+        Ingredient.objects.filter(category__startswith=section)
+        .annotate_display_name()
+        .order_by("display_name")
+    )
+    categories = sorted({ingredient.category for ingredient in all_ingredients})
+
+    library = list[tuple[str, str, list[Ingredient]]]()
+    for category in categories:
+        ingredients = [
+            ingredient
+            for ingredient in all_ingredients
+            if ingredient.category == category
+        ]
+
+        # Try to make equally-sized groups.
+        group_count = math.ceil(len(ingredients) / 17)
+        group_size = math.ceil(len(ingredients) / group_count)
+        group_number = 1
+        while len(ingredients) > 0:
+            category_label = Ingredient.Category.get_label(category) + (
+                f" ({group_number})" if group_count > 1 else ""
+            )
+            library.append(
+                (f"{category}-{group_number}", category_label, ingredients[:group_size])
+            )
+            ingredients = ingredients[group_size:]
+            group_number += 1
+
+    return render(request, "data/section_cards.html", {"library": library})
 
 
 def pairing_results(request: HttpRequest) -> HttpResponse:

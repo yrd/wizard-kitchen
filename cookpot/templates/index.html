@@ -14,7 +14,7 @@
 			</p>
 		</header>
 
-		<main class="Results">
+		<div class="Results">
 			<div class="Cauldron">
 				<svg viewBox="0 0 370.4167 317.5" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns="http://www.w3.org/2000/svg">
 					<defs>
@@ -105,33 +105,19 @@
 					</g>
 				</svg>
 			</div>
-		</main>
+		</div>
 
 		<div class="Cards">
-			{% for index, ingredients in ingredient_library %}
-				<input id="selectedcategory-{{ index }}" name="selectedcategory" type="radio" value="{{ category }}" />
-				<label class="CategorySelector" for="selectedcategory-{{ index }}">
-					{{ ingredients.0.category_label }}
-				</label>
-
-				{% if ingredients|length > 1 %}
-					<div class="CardFan" style="--card-count: {{ ingredients|length }}">
-				{% else %}
-					<div class="CardFan single">
-				{% endif %}
-					{% for ingredient in ingredients %}
-						<input id="ingredient{{ ingredient.pk }}" type="checkbox" name="ingredient{{ ingredient.pk }}" />
-						<label for="ingredient{{ ingredient.pk }}">
-							<div class="IngredientCard">
-								{{ ingredient.display_name }}
-							</div>
-							<div class="IngredientPlaceholder">
-								{{ ingredient.display_name }}
-							</div>
-						</label>
-					{% endfor %}
-				</div>
+			{% for section, section_label in sections %}
+				<input id="selectedsection-{{ section }}" name="selectedsection" type="radio" value="{{ section }}" />
+				<label class="CategorySelector section" for="selectedsection-{{ section }}">{{ section_label }}</label>
 			{% endfor %}
+
+			{% for _ in missing_sections %}
+				<span class="spacer"></span>
+			{% endfor %}
+
+			<span class="delimiter" style="display: none"></span>
 		</div>
 
 		<div class="Attribution">
@@ -141,6 +127,54 @@
 			</p>
 		</div>
 	</div>
+
+
+	<script type="text/javascript">
+
+
+		function
+
+		document.querySelectorAll("input[name=selectedsection]").forEach((selectedSectionInput) => {
+			selectedSectionInput.addEventListener("input", () => {
+				if (!selectedSectionInput.checked) {
+					return
+				}
+
+				// Remove the stuff from the old section.
+				document.querySelectorAll(".Cards > .delimiter ~ *")
+					.forEach((element) => element.remove())
+
+				// Keep the inputs disabled until we have our result.
+				document.querySelectorAll("input[name=selectedsection]")
+					.forEach((element) => element.disabled = true)
+				function finish() {
+					document.querySelectorAll("input[name=selectedsection]")
+						.forEach((element) => element.disabled = false)
+				}
+
+				fetch(`{% url "section_cards" %}?section=${encodeURIComponent(selectedSectionInput.value)}`)
+					.then((response) => response.text())
+					.then((text) => {
+						const template = document.createElement("template")
+						template.innerHTML = text
+
+						const cardsElement = document.querySelector(".Cards")
+						for (const element of template.content.children) {
+							const clone = element.cloneNode(true)
+							cardsElement.append(clone)
+						}
+
+						document.querySelector("input[name=selectedcategory]").checked = true
+						finish()
+					})
+					.catch((error) => {
+						console.error(error)
+						alert(`Error: ${error}`)
+						finish()
+					})
+			})
+		})
+	</script>
 
 
 {#	<main class="Container">#}

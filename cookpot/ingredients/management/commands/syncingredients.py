@@ -4,16 +4,16 @@ from collections.abc import Mapping, Sequence
 from typing import Any
 
 import requests
-from django.core.management.base import BaseCommand, CommandError
+from django.core.management.base import BaseCommand
 from django.db import transaction
 
-from cookpot.ingredients.models import Ingredient, IngredientMolecule, IngredientName
+from cookpot.ingredients.models import Ingredient
 
 CATEGORY_MAPPINGS = {
     "cereal": "cerealcrop-cereal",
     "seed": "nutseed-seed",
     "Plant": "plant",
-    "Vegatable": "vegetable",
+    "Vegetable": "vegetable",
 }
 
 
@@ -29,7 +29,7 @@ class Command(BaseCommand):
         ), f"Category must be a string, got {type(category)}."
         # See if we have a remapping for the category. This is because some of the
         # categories are still present twice upstream.
-        category = Ingredient.CATEGORY_MAPPINGS.get(category, category)
+        category = CATEGORY_MAPPINGS.get(category, category)
         if category not in Ingredient.Category.values:
             logging.warning(f"Entity {entity_id}: got unknown category {category}.")
             category = Ingredient.Category.UNCATEGORIZED

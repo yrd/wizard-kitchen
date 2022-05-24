@@ -1,0 +1,22 @@
+{% for category, category_label, ingredients in library %}
+	<input id="selectedcategory-{{ category }}" name="selectedcategory" type="radio" value="{{ category }}" />
+	<label class="CategorySelector" for="selectedcategory-{{ category }}">{{ category_label }}</label>
+
+	{% if ingredients|length > 1 %}
+		<div class="CardFan" style="--card-count: {{ ingredients|length }}">
+	{% else %}
+		<div class="CardFan single">
+	{% endif %}
+		{% for ingredient in ingredients %}
+			<input id="ingredient{{ ingredient.pk }}" type="checkbox" name="ingredient{{ ingredient.pk }}" />
+			<label for="ingredient{{ ingredient.pk }}">
+				<div class="IngredientCard">
+					{{ ingredient.display_name }}
+				</div>
+				<div class="IngredientPlaceholder">
+					{{ ingredient.display_name }}
+				</div>
+			</label>
+		{% endfor %}
+	</div>
+{% endfor %}

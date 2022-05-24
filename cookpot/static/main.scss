@@ -109,7 +109,9 @@ input, button, textarea, select {
 .Cards {
 	display: grid;
 	grid-template-columns: repeat(6, auto) 1fr;
-	grid-template-rows: repeat(13, auto);
+	// When changing the following, make sure to keep it in sync with the
+	// calculation in the index view.
+	grid-template-rows: repeat(10, auto);
 	grid-auto-flow: column dense;
 	gap: var(--gap-xs);
 	padding: var(--gap-xs);
@@ -121,13 +123,13 @@ input, button, textarea, select {
 
 	> div {
 		grid-column: 7;
-		grid-row: 1 / span 13;
+		grid-row: 1 / span 10;
 	}
 }
 
 .CategorySelector {
 	padding-inline: var(--gap-xs);
-	--border-color: #755b3f;
+	--border-color: #4d5b38;
 	border: 0.15rem solid var(--border-color);
 	border-radius: 0.2rem;
 	line-height: 1.2;
@@ -136,22 +138,37 @@ input, button, textarea, select {
 	text-align: center;
 	font-variant: small-caps;
 	background-color: #202228;
-	color: #c3b7a0;
+	color: #b7c3a0;
 	box-shadow: 0 0 0 0.2rem hsla(0, 0%, 0%, 0.2);
 	transition: border-color var(--subtle-motion), box-shadow var(--subtle-motion);
 
 	&:hover {
-		border-color: #e8c682;
+		border-color: #d5e882;
+	}
+
+	&.section {
+		--border-color: #755b3f;
+		color: #c3b7a0;
+
+		&:hover {
+			border-color: #e8c682;
+		}
 	}
 }
 
 input[type=radio]:checked + .CategorySelector {
-	--border-color: #c6a868;
-	color: #d0bd95;
-	box-shadow: 0 1rem 1rem #54401b inset;
+	--border-color: #afc668;
+	color: #bcccac;
+	box-shadow: 0 1rem 1rem #38541b inset;
 
 	+ .CardFan {
 		display: block;
+	}
+
+	&.section {
+		--border-color: #c6a868;
+		color: #d0bd95;
+		box-shadow: 0 1rem 1rem #54401b inset;
 	}
 }
 
