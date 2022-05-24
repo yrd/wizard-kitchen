@@ -53,9 +53,9 @@ input, button, textarea, select {
 
 .Container {
   display: grid;
-  grid-template: "header results" 1fr
-		"footer results" auto
-    "cards cards" auto / 40rem 1fr;
+  grid-template: "header info results" 1fr
+		"footer info results" auto
+    "cards cards cards" auto / 30rem 1fr 40rem;
   gap: var(--gap-l);
   height: 100vh;
 
@@ -63,8 +63,8 @@ input, button, textarea, select {
     grid-area: header;
   }
 
-  > .Results {
-    grid-area: results;
+  > .Cauldron {
+    grid-area: info;
   }
 
   > .Cards {
@@ -364,13 +364,12 @@ $inline-card-size: 8rem;
  */
 
 .Cauldron {
-	display: inline-block;
-	margin: 0 auto;
-
 	--hue: 100;
+	max-inline-size: 50rem;
+	place-self: start center;
 
 	> svg {
-		block-size: 50vh;
+		inline-size: 60vmin;
 		filter: drop-shadow(0rem 2rem 3rem hsla(0, 0%, 0%, 0.5));
 
 		%Outline {
@@ -577,6 +576,41 @@ $inline-card-size: 8rem;
 					100% { stop-color: hsl(29, 74%, 44%); }
 				}
 				animation: Cauldron-fire-color-2 11s linear 0s infinite;
+			}
+		}
+	}
+}
+
+/**
+ * Selected ingredient list
+ */
+
+.SelectedIngredients {
+	margin: var(--gap-l) 0;
+	padding: 0;
+	list-style: none;
+	text-align: center;
+
+	> li {
+		display: inline-block;
+		margin: var(--gap-xs) var(--gap-s);
+
+		> button {
+			display: inline-block;
+			min-inline-size: 4rem;
+			border-block: 0.15rem solid #755b3f;
+			border-inline: none;
+			padding-inline: var(--gap-s);
+			line-height: 2rem;
+			background-image:linear-gradient(to right, transparent 0%, #202228 var(--gap-s), #202228 calc(100% - var(--gap-s)), transparent 100%);
+			background-color: transparent;
+			color: inherit;
+			cursor: pointer;
+			transition: border-color var(--subtle-motion), background-color var(--subtle-motion);
+
+			&:hover {
+				border-color: #e8c682;
+				background-color: #202228;
 			}
 		}
 	}
