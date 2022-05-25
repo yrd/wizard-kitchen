@@ -176,16 +176,9 @@
 					finish()
 					return
 				}
-				const text = await response.text()
 
-				const template = document.createElement("template")
-				template.innerHTML = text
-
-				const cardsElement = document.querySelector(".Cards")
-				for (const element of template.content.children) {
-					const clone = element.cloneNode(true)
-					cardsElement.append(clone)
-				}
+				document.querySelector(".Cards > .delimiter")
+					.insertAdjacentHTML("afterend", await response.text())
 
 				// Make sure the inputs for the already selected ingredients are also
 				// selected.
