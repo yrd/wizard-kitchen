@@ -32,6 +32,11 @@
 						<stop offset="1" />
 					</linearGradient>
 
+    			<linearGradient id="drop-fill" x1="183.1285" y1="23.4169" x2="196.4846" y2="40.6319" gradientUnits="userSpaceOnUse">
+						<stop offset="0" />
+						<stop offset="1" />
+					</linearGradient>
+
 					<filter id="dirt-filter" x="-100%" y="-100%" width="300%" height="300%">
 						<feGaussianBlur result="result0" in="SourceGraphic" stdDeviation="0.2"/>
 						<feTurbulence result="result1" numOctaves="4" baseFrequency=".1"/>
@@ -107,6 +112,14 @@
 					<path d="M195.0614 190.3225c7.6332-27.3656 15.2664-54.7315 29.5057-78.3597 14.2392-23.6282 35.0835-43.5179 55.1282-53.2133s39.2883-9.1963 50.9397-1.3263c11.6514 7.8701 15.7103 23.1103 19.7692 38.3504" />
 					<path d="M145.0606 191.863c-5.7267-12.8836-11.4535-25.7676-21.373-32.9713-9.9195-7.2038-24.0312-8.7269-34.5503-4.1223-10.519 4.6047-17.4445 15.3366-24.2014 32.1068-6.7568 16.7702-13.3446 39.5773-19.9324 62.3847" />
 				</g>
+
+				<g class="whirl">
+					<path d="M182.7118 192.3543c-1.3574-5.9411-2.7148-11.8824 1.8208-16.0312 4.5357-4.1488 14.9637-6.5045 23.1351-6.3326 8.1715.172 14.0852 2.8712 18.1888 7.149 4.1037 4.278 6.397 10.1337 6.546 17.0667.1489 6.933-1.8464 14.9426-17.3692 19.063-15.5229 4.1205-44.5717 4.3515-60.7382-1.5108-16.1664-5.8623-19.4484-17.8178-22.7306-29.7739" />
+					<path d="M204.2943 190.914c-7.8708 5.0948-15.7416 10.1894-24.1148 8.2068-8.3732-1.9827-17.2482-11.0425-17.5161-18.5791-.268-7.5366 8.0716-13.5488 21.655-17.0733 13.5833-3.5246 32.409-4.5613 43.8722.6918s15.5629 16.7954 19.6625 28.3376" />
+					<path d="M163.5768 193.357c-1.367-6.5686-2.734-13.1373 5.8157-15.9183 8.5497-2.781 27.015-1.7736 37.732 1.5371 10.717 3.3108 13.6848 8.9243 11.0603 14.6163-2.6244 5.692-10.8406 11.4622-23.5884 12.9553-12.7478 1.493-30.0263-1.2914-38.8286-5.9616-8.8023-4.6703-9.1279-11.2262-8.1601-17.7362.9678-6.51 3.2288-12.9732 8.847-18.33 5.6182-5.3568 14.5928-9.6063 23.5674-13.856" />
+				</g>
+
+  			<path class="drop" d="M201.4134 32.961c0 3.6216-.9287 10.3468-3.2396 12.7813-2.4742 2.6067-6.4615.7975-10.3392.7975-3.8943 0-8.5183-.2401-10.9944-2.8663-2.2922-2.4312-2.5845-7.1074-2.5845-10.7125 0-2.7931 2.1165-6.3257 3.5624-8.4841 2.4362-3.637 5.3102-5.0948 10.0165-5.0948 4.0046 0 6.0937 2.8237 8.579 5.5814 2.169 2.4065 4.9998 4.5027 4.9998 7.9975z" fill="url(#drop-fill)" />
 			</svg>
 
 			<ul class="SelectedIngredients">
@@ -204,6 +217,25 @@
 									checkbox.checked = false;
 								}
 							})
+
+							// Play the animation
+							const cauldronElement = document.querySelector(".Cauldron")
+							if (!cauldronElement.classList.contains("dropping")) {
+								const nextHue = Math.floor(Math.random() * 360)
+								cauldronElement.style.setProperty("--drop-hue", nextHue)
+								const dropRotation = Math.floor(Math.random() * 360)
+								cauldronElement.style.setProperty("--drop-rotation", `${dropRotation}deg`)
+
+								cauldronElement.classList.add("dropping")
+								window.setTimeout(
+									() => cauldronElement.style.setProperty("--hue", nextHue),
+									1800,
+								)
+								window.setTimeout(
+									() => cauldronElement.classList.remove("dropping"),
+									2400,
+								)
+							}
 						} else {
 							document
 								.querySelector(`.SelectedIngredients > li > button${ingredientSelector}`)

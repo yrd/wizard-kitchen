@@ -373,6 +373,8 @@ $inline-card-size: 8rem;
 	place-self: start center;
 
 	> svg {
+		display: block;
+		margin-inline: auto;
 		inline-size: 60vmin;
 		filter: drop-shadow(0rem 2rem 3rem hsla(0, 0%, 0%, 0.5));
 
@@ -580,6 +582,73 @@ $inline-card-size: 8rem;
 					100% { stop-color: hsl(29, 74%, 44%); }
 				}
 				animation: Cauldron-fire-color-2 11s linear 0s infinite;
+			}
+		}
+
+		.whirl {
+			visibility: hidden;
+			stroke: #f9f9f9;
+			stroke-opacity: 0.9;
+			stroke-width: 1.5rem;
+			stroke-linecap: round;
+			fill: none;
+			pointer-events: none;
+
+			@for $i from 1 through 3 {
+				> :nth-child(#{$i}) {
+					stroke: Hsl(0, 0%, #{85% + math.random(15%)});
+				}
+			}
+		}
+
+		.drop {
+			@extend %Outline;
+			visibility: hidden;
+			stroke: hsl(var(--drop-hue, 100), 40%, 40%);
+			transform-origin: center;
+		}
+
+		#drop-fill {
+			> stop:first-child {
+				stop-color: hsl(var(--drop-hue, 100), 90%, 90%);
+			}
+
+			> stop:last-child {
+				stop-color: hsl(var(--drop-hue, 100), 100%, 80%);
+			}
+		}
+	}
+
+	&.dropping {
+		> svg {
+			.whirl {
+				@keyframes Cauldron-whirl {
+					from { stroke-dashoffset: 180; }
+					to { stroke-dashoffset: -240; }
+				}
+
+				visibility: visible;
+				stroke-dasharray: 180 240;
+				animation: Cauldron-whirl 0.8s ease-in-out 1.4s 1 normal both;
+			}
+
+			.drop {
+				@keyframes Cauldron-drop {
+					0% {
+						opacity: 0;
+					}
+					99% {
+						opacity: 1;
+						transform: translateY(10rem) scaleX(0.7);
+					}
+					100% {
+						opacity: 0;
+						transform: translateY(10rem) scaleX(0.7);
+					}
+				}
+
+				visibility: visible;
+				animation: Cauldron-drop 0.8s ease-in 0.6s 1 normal both;
 			}
 		}
 	}
