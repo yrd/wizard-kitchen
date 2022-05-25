@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from django.core import validators
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 
@@ -80,14 +81,49 @@ class Ingredient(models.Model):
     )
 
     flavordb_id = models.PositiveIntegerField(
-        unique=True,
+        null=True,
         verbose_name=_("FlavorDB ID"),
         help_text=_("ID of the corresponding entity in the FlavorDB database."),
+    )
+
+    foodb_id = models.CharField(
+        blank=True,
+        default="",
+        max_length=9,
+        validators=[
+            validators.RegexValidator(
+                r"FOOD\d{5}",
+                message=_("FooDB identifiers must look like this: FOOD00648"),
+                code="invalid-foodb-id",
+            )
+        ],
+        verbose_name=_("FooDB ID"),
+        help_text=_("Public identifier of the food item in the FooDB database."),
+    )
+
+    wikipedia_title = models.CharField(
+        max_length=100,
+        blank=True,
+        default="",
+        verbose_name=_("Wikipedia title"),
+        help_text=_("Title of the corresponding article in the English Wikipedia."),
     )
 
     objects = IngredientManager()
 
     class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["flavordb_id"],
+                condition=models.Q(flavordb_id__isnull=False),
+                name="flavordb_entity_ids_unique",
+            ),
+            models.UniqueConstraint(
+                fields=["foodb_id"],
+                condition=~models.Q(foodb_id=""),
+                name="foodb_food_ids_unique",
+            ),
+        ]
         verbose_name = _("ingredient")
         verbose_name_plural = _("ingredients")
 
@@ -110,11 +146,69 @@ class IngredientName(models.Model):
         related_query_name="name",
         verbose_name=_("ingredient"),
     )
-    label = models.CharField(max_length=100, verbose_name=_("label"))
+
+    priority = models.SmallIntegerField(
+        default=100,
+        verbose_name=_("priority"),
+        help_text=_("Items with lower values here will come first."),
+    )
+
+    label = models.CharField(
+        max_length=100,
+        verbose_name=_("label"),
+    )
 
     class Meta:
+        ordering = ["ingredient", "priority"]
         verbose_name = _("ingredient name")
         verbose_name_plural = _("ingredient names")
+
+
+class Molecule(models.Model):
+    """"""
+
+    pubchem_id = models.PositiveIntegerField(
+        null=True,
+        default=None,
+        verbose_name=_("PubChem ID"),
+        help_text=_("ID of the molecule in the PubChem database."),
+        # FlavorDB uses this as the primary key.
+    )
+
+    foodb_id = models.CharField(
+        max_length=9,
+        blank=True,
+        default="",
+        validators=[
+            validators.RegexValidator(
+                r"FDB\d{6}",
+                message=_("FooDB identifiers must look like this: FDB123456"),
+                code="invalid-foodb-id",
+            )
+        ],
+        verbose_name=_("FooDB ID"),
+        help_text=_("Public identifier in the FooDB database."),
+    )
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["pubchem_id"],
+                condition=models.Q(pubchem_id__isnull=False),
+                name="pubchem_ids_unique",
+            ),
+            models.UniqueConstraint(
+                fields=["foodb_id"],
+                condition=~models.Q(foodb_id=""),
+                name="foodb_molecule_ids_unique",
+            ),
+            models.CheckConstraint(
+                check=models.Q(pubchem_id__isnull=False) | ~models.Q(foodb_id=""),
+                name="molecule_has_identifier",
+            ),
+        ]
+        verbose_name = _("molecule")
+        verbose_name_plural = _("molecules")
 
 
 class IngredientMolecule(models.Model):
@@ -130,7 +224,45 @@ class IngredientMolecule(models.Model):
         related_query_name="molecule_entry",
         verbose_name=_("ingredient"),
     )
-    molecule_pubchem_id = models.PositiveIntegerField(
-        verbose_name=_("molecule PubChem ID"),
-        help_text=_("ID of the molecule in the PubChem database."),
+    molecule = models.ForeignKey(
+        Molecule,
+        on_delete=models.CASCADE,
+        related_name="ingredient_entries",
+        related_query_name="ingredient_entry",
+        verbose_name=_("molecule"),
     )
+
+    flavordb_found = models.BooleanField(
+        default=False,
+        verbose_name=_("found in FlavorDB"),
+        help_text=_(
+            "If this is set, the molecule was found in the ingredient according to "
+            "FlavorDB."
+        ),
+    )
+
+    foodb_content_sum = models.FloatField(
+        default=0.0,
+        verbose_name=_("FooDB content sum"),
+        help_text=_(
+            "Sum of content values from FooDB. These indicate how much of the "
+            "molecule was found (in mg / 100g)."
+        ),
+    )
+    foodb_content_sample_count = models.PositiveIntegerField(
+        default=0,
+        verbose_name=_("FooDB sample size"),
+        help_text=_(
+            "Number of samples were summed up in the other FooDB parameter. This is "
+            "used to calculate an average."
+        ),
+    )
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["ingredient", "molecule"], name="ingredient_molecule_unique"
+            )
+        ]
+        verbose_name = _("ingredient molecule containment")
+        verbose_name_plural = _("ingredient molecule containments")
