@@ -5,18 +5,24 @@
   --gap-s: 1rem;
   --gap-m: 1.5rem;
   --gap-l: 2.5rem;
+
   --radius-l: 1.5rem;
   --radius-s: 0.2rem;
+
   --text-l: 1.2rem;
   --text-m: 1rem;
   --text-s: 0.8rem;
-  --text-hsl: 0, 0%, 3%;
-  --guideline-hsl: 19, 7%, 76%;
-  --primary-hsl: 38, 92%, 47%;
-  --secondary-hsl: 257, 60%, 58%;
-  --dark-primary-hsl: 38, 87%, 40%;
-  --hinted-opacity: 0.7;
-	--subtle-motion: 0.15s cubic-bezier(.37,.18,.29,1.03);
+
+  --text-hsl: 0, 0%, 90%;
+  --primary-hsl: 40, 74%, 57%;
+	--secondary-hsl: 84, 38%, 54%;
+  --ternary-hsl: 9, 69%, 61%;
+	--surface-hsl: 225, 20%, 16%;
+
+  --hinted-opacity: 0.8;
+	--muted-opacity: 0.5;
+
+	--subtle-motion: 0.1s cubic-bezier(.37,.18,.29,1.03);
 	--prominent-motion: 0.6s cubic-bezier(.05,.95,.12,.93);
 }
 
@@ -36,7 +42,7 @@ body {
   font-family: Grandstander, Cantarell, Roboto, sans-serif;
   -webkit-font-smoothing: antialiased;
   background-image: radial-gradient(ellipse at 20% 20%, hsl(240, 14%, 15%) 0%, hsl(240, 15%, 26%) 0%);
-	color: hsl(0, 0%, 90%);
+	color: hsl(var(--text-hsl));
 }
 
 input, button, textarea, select {
@@ -132,47 +138,42 @@ input, button, textarea, select {
 }
 
 .CategorySelector {
-	padding-inline: var(--gap-xs);
-	--border-color: #4d5b38;
-	border: 0.15rem solid var(--border-color);
-	border-radius: 0.2rem;
-	line-height: 1.2;
+	--hsl: var(--secondary-hsl);
+
+	border: 0.15rem solid hsla(var(--hsl), var(--muted-opacity));
+	border-radius: var(--radius-s);
+	padding-inline: var(--gap-s);
+	line-height: 1.3;
 	letter-spacing: -0.05em;
 	font-size: var(--text-m);
 	text-align: center;
 	font-variant: small-caps;
-	background-color: #202228;
-	color: #b7c3a0;
+	background-color: hsl(var(--surface-hsl), var(--hinted-opacity));
+	color: hsla(var(--text-hsl), var(--hinted-opacity));
 	box-shadow: 0 0 0 0.2rem hsla(0, 0%, 0%, 0.2);
-	transition: border-color var(--subtle-motion), box-shadow var(--subtle-motion);
+	transition: border-color var(--subtle-motion), background-color var(--subtle-motion), box-shadow var(--subtle-motion);
 
 	&:hover {
-		border-color: #d5e882;
+		border-color: hsl(var(--hsl));
+		background-color: hsl(var(--surface-hsl));
 	}
 
 	&.section {
-		--border-color: #755b3f;
-		color: #c3b7a0;
-
-		&:hover {
-			border-color: #e8c682;
-		}
+		--hsl: var(--primary-hsl);
 	}
 }
 
 input[type=radio]:checked + .CategorySelector {
-	--border-color: #afc668;
-	color: #bcccac;
-	box-shadow: 0 1rem 1rem #38541b inset;
+	box-shadow: 0 0.8rem 1rem hsla(var(--hsl), var(--muted-opacity)) inset;
+	background-color: hsl(var(--surface-hsl));
+	color: hsl(var(--hsl));
+
+	&:not(:hover) {
+		border-color: hsla(var(--hsl), var(--hinted-opacity))
+	}
 
 	+ .CardFan {
 		display: block;
-	}
-
-	&.section {
-		--border-color: #c6a868;
-		color: #d0bd95;
-		box-shadow: 0 1rem 1rem #54401b inset;
 	}
 }
 
@@ -224,7 +225,9 @@ $inline-card-size: 8rem;
 					// rightmost. For the center card it will be zero.
 					--factor: calc(#{$i} / (var(--card-count) - 1) * 2 - 1);
 					--abs-factor: max(var(--factor), -1 * var(--factor));
-					transform: translateY(calc((3rem + 0.2rem * var(--card-count)) * var(--abs-factor) - 2rem)) rotate(calc(40deg * var(--factor)));
+					transform:
+						translateY(calc((3rem + 0.2rem * var(--card-count)) * var(--abs-factor) - 2rem))
+						rotate(calc(40deg * var(--factor)));
 				}
 			}
 		}
@@ -276,7 +279,7 @@ $inline-card-size: 8rem;
 	block-size: $block-card-size;
 	inline-size: $inline-card-size;
 	border-width: 0.8rem;
-	border-color: #c7543e;
+	border-color: hsl(var(--ternary-hsl));
 	border-style: outset ridge inset groove;
 	padding: var(--gap-s) var(--gap-xs);
 	background-image:
@@ -339,7 +342,6 @@ $inline-card-size: 8rem;
 						var(--ground-shadow);
 				}
 			}
-			border-color: #e06e59;
 			animation: IngredientCard-hover 1.5s linear 0s infinite;
 			--first-hsl: 185, 100%, 79%;
 			--second-hsl: 197, 100%, 77%;
@@ -355,8 +357,8 @@ $inline-card-size: 8rem;
 	display: none;
 	block-size: $block-card-size;
 	inline-size: $inline-card-size;
-	border: 0.2rem dashed #72729f;
-	border-radius: 0.5rem;
+	border: 0.2rem dashed hsla(var(--ternary-hsl), var(--hinted-opacity));
+	border-radius: var(--radius-l);
 	padding: var(--gap-s) var(--gap-xs);
 	text-align: center;
 	background-color: hsl(240, 15%, 26%);
@@ -369,6 +371,7 @@ $inline-card-size: 8rem;
 
 .Cauldron {
 	--hue: 100;
+
 	max-inline-size: 50rem;
 	place-self: start center;
 
@@ -379,7 +382,7 @@ $inline-card-size: 8rem;
 		filter: drop-shadow(0rem 2rem 3rem hsla(0, 0%, 0%, 0.5));
 
 		%Outline {
-			stroke: #222222;
+			stroke: hsl(0, 0%, 13%);
 			stroke-width: 0.1rem;
 		}
 
@@ -389,21 +392,21 @@ $inline-card-size: 8rem;
 
 		.cauldron-neck {
 			@extend %Outline;
-			fill: #666666;
+			fill: hsl(0, 0%, 40%);
 		}
 
 		.cauldron-top {
 			@extend %Outline;
-			fill: #b0b0b0;
+			fill: hsl(0, 0%, 69%);
 		}
 
 		#cauldron-body-fill {
 			> stop:first-child {
-				stop-color: #b0b0b0;
+				stop-color: hsl(0, 0%, 69%);
 			}
 
 			> stop:last-child {
-				stop-color: #655c5b;
+				stop-color: hsl(6, 5%, 38%);
 			}
 		}
 
@@ -412,15 +415,15 @@ $inline-card-size: 8rem;
 			pointer-events: none;
 
 			> :nth-child(1) {
-				fill: #735845;
+				fill: hsl(25, 25%, 36%);
 			}
 
 			> :nth-child(2) {
-				fill: #77533c;
+				fill: hsl(23, 33%, 35%);
 			}
 
 			> :nth-child(3) {
-				fill: #724e41;
+				fill: hsl(16, 27%, 35%);
 			}
 		}
 
@@ -516,16 +519,16 @@ $inline-card-size: 8rem;
 		.wood {
 			> .log {
 				@extend %Outline;
-				fill: #825419;
+				fill: hsl(34, 68%, 30%);
 			}
 
 			> .log-face {
 				@extend %Outline;
-				fill: #e8a53e;
+				fill: hsl(36, 79%, 58%);
 			}
 
 			> .scratch {
-				stroke: #b57b18;
+				stroke: hsl(38, 77%, 40%);
 				stroke-width: 0.18rem;
 				stroke-linecap: round;
 				fill: none;
@@ -544,7 +547,7 @@ $inline-card-size: 8rem;
 				100% { transform: none; }
 			}
 
-			filter: drop-shadow(0 0 0 black);
+			filter: drop-shadow(0 -0.2rem 0.4rem hsla(32, 96%, 49%, 0.62));
 			pointer-events: none;
 			transform-origin: 50% 100%;
 			transition: opacity var(--subtle-motion);
@@ -552,11 +555,11 @@ $inline-card-size: 8rem;
 
 			> .base {
 				@extend %Outline;
-				stroke: #462c1f;
+				stroke: hsl(20, 39%, 20%);
 			}
 
 			> .spark {
-				fill: #f1ef3e;
+				fill: hsl(59, 86%, 59%);
 				fill-opacity: 0.6;
 			}
 		}
@@ -636,6 +639,7 @@ $inline-card-size: 8rem;
 				@keyframes Cauldron-drop {
 					0% {
 						opacity: 0;
+						transform: translateY(0rem) scaleX(1);
 					}
 					99% {
 						opacity: 1;
@@ -671,19 +675,25 @@ $inline-card-size: 8rem;
 		> button {
 			display: inline-block;
 			min-inline-size: 4rem;
-			border-block: 0.15rem solid #755b3f;
+			border-block: 0.15rem solid hsl(var(--primary-hsl), var(--muted-opacity));
 			border-inline: none;
 			padding-inline: var(--gap-s);
 			line-height: 2rem;
-			background-image:linear-gradient(to right, transparent 0%, #202228 var(--gap-s), #202228 calc(100% - var(--gap-s)), transparent 100%);
+			background-image: linear-gradient(
+					to right,
+					transparent 0%,
+					hsl(var(--surface-hsl)) var(--gap-s),
+					hsl(var(--surface-hsl)) calc(100% - var(--gap-s)),
+					transparent 100%
+			);
 			background-color: transparent;
 			color: inherit;
 			cursor: pointer;
 			transition: border-color var(--subtle-motion), background-color var(--subtle-motion);
 
 			&:hover {
-				border-color: #e8c682;
-				background-color: #202228;
+				border-color: hsl(var(--primary-hsl));
+				background-color: hsl(var(--surface-hsl));
 			}
 		}
 	}
