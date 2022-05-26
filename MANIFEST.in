@@ -1,0 +1,4 @@
+include cookpot/static/*.css
+include cookpot/static/fonts/*.ttf
+include cookpot/templates/*.html
+include cookpot/templates/**/*.html

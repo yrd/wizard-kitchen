@@ -54,7 +54,9 @@
 
         release = (pkgs.python310.override {
 					packageOverrides = self: super: {
-						cookpot = self.callPackage ./nix/python-packages/cookpot.nix {};
+						cookpot = self.callPackage ./nix/python-packages/cookpot.nix {
+							sass = pkgs.nodePackages.sass;
+						};
 					};
 				}).withPackages (pythonPackages: [ pythonPackages.cookpot ]);
       };
