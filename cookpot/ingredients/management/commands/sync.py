@@ -1,5 +1,6 @@
 import json
 import logging
+import re
 import unicodedata
 from collections.abc import Mapping, Sequence
 from typing import Any
@@ -18,10 +19,73 @@ from cookpot.ingredients.models import (
 )
 
 FLAVORDB_CATEGORY_MAPPINGS = {
-    "cereal": "cerealcrop-cereal",
-    "seed": "nutseed-seed",
-    "Plant": "plant",
-    "Vegetable": "vegetable",
+    "cereal": Ingredient.Category.CEREALS_CEREAL,
+    "seed": Ingredient.Category.NUTSEED_SEED,
+    "Plant": Ingredient.Category.PLANT,
+    "Vegetable": Ingredient.Category.VEGETABLE,
+    "fishseafood-fish": Ingredient.Category.AQUATIC_FISH,
+    "fishseafood-seafood": Ingredient.Category.AQUATIC_SEAFOOD,
+    "cerealcrop": Ingredient.Category.CEREALS,
+    "cerealcrop-cereal": Ingredient.Category.CEREALS_CEREAL,
+    "cerealcrop-maize": Ingredient.Category.CEREALS_MAIZE,
+    "plantderivative": Ingredient.Category.PLANT_DERIVATIVE,
+}
+
+FOODB_GROUP_MAPPINGS = {
+    ("Animal foods", "Caprae"): Ingredient.Category.MEAT,
+    ("Animal foods", "Poultry"): Ingredient.Category.MEAT,
+    ("Animal foods", "Swine"): Ingredient.Category.MEAT,
+    ("Aquatic foods", "Crustaceans"): Ingredient.Category.AQUATIC_SEAFOOD,
+    ("Aquatic foods", "Fishes"): Ingredient.Category.AQUATIC_FISH,
+    ("Aquatic foods", "Mollusks"): Ingredient.Category.AQUATIC_SEAFOOD,
+    ("Aquatic foods", "Other aquatic foods"): Ingredient.Category.AQUATIC,
+    ("Aquatic foods", "Seaweed"): Ingredient.Category.AQUATIC_SEAWEED,
+    ("Baking goods", "Substitutes"): Ingredient.Category.ADDITIVE,
+    ("Beverages", "Alcoholic beverages"): Ingredient.Category.BEVERAGE_ALCOHOLIC,
+    ("Beverages", "Beverages"): Ingredient.Category.BEVERAGE,
+    ("Beverages", "Fermented beverages"): Ingredient.Category.BEVERAGE_ALCOHOLIC,
+    ("Cereals and cereal products", "Cereals"): Ingredient.Category.CEREALS_CEREAL,
+    ("Cereals and cereal products", "Leavened breads"): Ingredient.Category.CEREALS,
+    (
+        "Cocoa and cocoa products",
+        "Cocoa products",
+    ): Ingredient.Category.PLANT_DERIVATIVE,
+    ("Cocoa and cocoa products", "Cocoa"): Ingredient.Category.PLANT_DERIVATIVE,
+    ("Coffee and coffee products", "Coffee"): Ingredient.Category.BEVERAGE_CAFFEINATED,
+    ("Confectioneries", "Candies"): Ingredient.Category.BAKERY_CANDIES,
+    ("Eggs", "Eggs"): Ingredient.Category.ANIMAL_PRODUCT,
+    ("Fats and oils", "Animal fats"): Ingredient.Category.ANIMAL_PRODUCT,
+    ("Fruits", "Berries"): Ingredient.Category.FRUIT_BERRY,
+    ("Fruits", "Citrus"): Ingredient.Category.FRUIT_CITRUS,
+    ("Fruits", "Drupes"): Ingredient.Category.FRUIT,
+    ("Fruits", "Other fruits"): Ingredient.Category.FRUIT,
+    ("Fruits", "Pomes"): Ingredient.Category.FRUIT,
+    ("Fruits", "Tropical fruits"): Ingredient.Category.FRUIT,
+    ("Gourds", "Gourds"): Ingredient.Category.VEGETABLE_GOURD,
+    ("Herbs and Spices", "Herb and spice mixtures"): Ingredient.Category.ADDITIVE,
+    ("Herbs and Spices", "Herbs"): Ingredient.Category.HERB,
+    ("Herbs and Spices", "Oilseed crops"): Ingredient.Category.FLOWER,
+    ("Herbs and Spices", "Spices"): Ingredient.Category.SPICE,
+    ("Herbs and spices", "Oilseed crops"): Ingredient.Category.FLOWER,
+    ("Milk and milk products", "Fermented milk products"): Ingredient.Category.DAIRY,
+    ("Milk and milk products", "Other milk products"): Ingredient.Category.DAIRY,
+    ("Milk and milk products", "Unfermented milks"): Ingredient.Category.DAIRY,
+    ("Nuts", "Nuts"): Ingredient.Category.NUTSEED_NUT,
+    ("Pulses", "Beans"): Ingredient.Category.NUTSEED_LEGUME,
+    ("Pulses", "Peas"): Ingredient.Category.NUTSEED_LEGUME,
+    ("Pulses", "Pulses"): Ingredient.Category.NUTSEED_LEGUME,
+    # This is only soy sauce.
+    ("Soy", "Soy products"): Ingredient.Category.ADDITIVE,
+    ("Teas", "Teas"): Ingredient.Category.BEVERAGE,
+    ("Vegetables", ""): Ingredient.Category.VEGETABLE,
+    ("Vegetables", "Cabbages"): Ingredient.Category.VEGETABLE_CABBAGE,
+    ("Vegetables", "Fruit vegetables"): Ingredient.Category.VEGETABLE_FRUIT,
+    ("Vegetables", "Leaf vegetables"): Ingredient.Category.VEGETABLE,
+    ("Vegetables", "Mushrooms"): Ingredient.Category.FUNGUS,
+    ("Vegetables", "Onion-family vegetables"): Ingredient.Category.VEGETABLE,
+    ("Vegetables", "Other vegetables"): Ingredient.Category.VEGETABLE,
+    ("Vegetables", "Root vegetables"): Ingredient.Category.VEGETABLE_ROOT,
+    ("Vegetables", "Stalk vegetables"): Ingredient.Category.VEGETABLE,
 }
 
 
@@ -114,6 +178,8 @@ class Command(BaseCommand):
         return created
 
     def sync_flavordb(self) -> None:
+        IngredientMolecule.objects.update(flavordb_found=False)
+
         session = requests.Session()
         for entity_id in range(1000):
             cache_key = f"flavordb_{entity_id}"
@@ -160,19 +226,27 @@ class Command(BaseCommand):
             )
         )
 
-        # Get only those names that are actually unique, because some synonyms are
-        # present in FlavorDB with multiple ingredients.
-        unique_mangled_names = {
-            name
-            for (name,) in (
-                ingredient_names.values_list("mangled_label")
-                .annotate(count=models.Count("pk"))
-                .filter(count=1)
-                .values_list("mangled_label")
+        # Get only those names that are actually unique or are the first in their
+        # priority list, because some synonyms are present in FlavorDB with multiple
+        # ingredients.
+        mangled_name_list = list(
+            ingredient_names.values_list("mangled_label")
+            .annotate(
+                count=models.Count("pk"),
+                min_priority=models.Min("priority"),
             )
+            .filter(models.Q(count=1) | models.Q(min_priority=0))
+            .values_list("mangled_label", "min_priority")
+        )
+        known_mangled_names = {name for (name, _) in mangled_name_list}
+        prioritized_mangled_names = {
+            name for (name, min_priority) in mangled_name_list if min_priority == 0
         }
 
         ingredient_foodb_ids = dict[int, str]()
+
+        class Done(Exception):
+            pass
 
         with open("/tmp/foodb_2020_04_07_json/Food.json", "r") as food_file:
             for line_index, line in enumerate(food_file.readlines()):
@@ -186,20 +260,70 @@ class Command(BaseCommand):
 
                     ingredient_foodb_ids[foodb_internal_id] = foodb_id
 
-                    mangled_name = name.lower().replace(" ", "")
-                    if mangled_name in unique_mangled_names:
-                        updated_count = Ingredient.objects.filter(
-                            models.Exists(
-                                ingredient_names.filter(
-                                    ingredient=models.OuterRef("pk"),
-                                    mangled_label=mangled_name,
-                                )
-                            )
-                        ).update(foodb_id=foodb_id)
-                        if updated_count > 0:
-                            continue
+                    lower_name = name.lower()
+                    initial_mangled_name = re.sub(r"[^\w]", "", lower_name)
+                    if initial_mangled_name.startswith("other"):
+                        # We don't need things like "Other alcoholic beverage" or
+                        # "Other bread" because they don't produce any information
+                        # anyway.
+                        continue
+                    if "var." in lower_name:
+                        # Same thing for variants, which exist for some foods
+                        continue
+                    if "ssp." in lower_name:
+                        # ... and subspecies.
+                        continue
+                    if line_data.get("export_to_foodb", False) is not True:
+                        # These are mostly generic entries that have the same name as
+                        # their category.
+                        continue
+                    if "(" in lower_name:
+                        # These names are a bit difficult to parse, so we just bail out
+                        # at the moment.
+                        continue
+
+                    # If the initial name we got does not produce a match, there are a
+                    # few other mappings we can try in order to get the names to match
+                    # the format the FlavorDB uses. These come in the form of prefixes
+                    # that we can remove.
+                    mangled_name_candidates = [initial_mangled_name]
+                    if initial_mangled_name.startswith("common"):
+                        mangled_name_candidates.append(initial_mangled_name[6:])
+                    if initial_mangled_name.startswith("garden"):
+                        mangled_name_candidates.append(initial_mangled_name[6:])
+
+                    for index, mangled_name in enumerate(mangled_name_candidates):
+                        if mangled_name in known_mangled_names:
+                            updated_count = Ingredient.objects.filter(
+                                models.Exists(
+                                    ingredient_names.order_by("priority")
+                                    .filter(
+                                        ingredient=models.OuterRef("pk"),
+                                        mangled_label=mangled_name,
+                                    )
+                                    .filter(
+                                        models.Q(priority=0)
+                                        if mangled_name in prioritized_mangled_names
+                                        else models.Q()
+                                    )
+                                ),
+                                # For all the other name candidates we tried out, we
+                                # don't want to overwrite any existing data if there
+                                # was one. For example, we wouldn't want "Garden Onion"
+                                # to take over the entry for "Onion" if the former came
+                                # after the latter.
+                                (
+                                    models.Q(foodb_id__in=[foodb_id, ""])
+                                    if index > 0
+                                    else models.Q()
+                                ),
+                            ).update(foodb_id=foodb_id)
+                            if updated_count > 0:
+                                raise Done
 
                     unhandled_items.append(line_data)
+                except Done:
+                    pass
                 except:
                     logging.exception(
                         f"[FooDB ingredients] line {line_index + 1}: error while "
@@ -212,9 +336,42 @@ class Command(BaseCommand):
                     )
 
         logging.info(
-            f"[FooDB ingredients] {len(unhandled_items)} entries could not be matched "
-            f"and will be skipped."
+            f"[FooDB ingredients] {len(unhandled_items)} entries were not matched and "
+            f"will be processed individually."
         )
+
+        for line_index, line_data in enumerate(unhandled_items):
+            try:
+                assert isinstance(foodb_id := line_data.get("public_id"), str)
+                Ingredient._meta.get_field("foodb_id").run_validators(foodb_id)
+                assert isinstance(name := line_data.get("name"), str)
+                assert isinstance(group := line_data.get("food_group"), str)
+                assert isinstance(subgroup := line_data.get("food_subgroup"), str)
+                assert isinstance(
+                    wikipedia_title := line_data.get("wikipedia_id", "") or "", str
+                )
+
+                try:
+                    category = FOODB_GROUP_MAPPINGS[group, subgroup]
+                except KeyError:
+                    logging.warning(
+                        f"[FooDB ingredients] could not map group: {group, subgroup}"
+                    )
+                    category = Ingredient.Category.UNCATEGORIZED
+
+                ingredient, _ = Ingredient.objects.update_or_create(
+                    foodb_id=foodb_id,
+                    defaults={"category": category, "wikipedia_title": wikipedia_title},
+                )
+                ingredient.names.update_or_create(
+                    label=unicodedata.normalize("NFC", name.strip()),
+                    defaults={"priority": -1},
+                )
+            except:
+                logging.exception(
+                    f"[FooDB ingredients] unhandled line {line_index + 1}: error while "
+                    f"processing."
+                )
 
         return ingredient_foodb_ids
 
@@ -327,6 +484,6 @@ class Command(BaseCommand):
         logging.debug(f"[FooDB content] updated {updated_count} entries.")
 
     def handle(self, *args: Any, **options: Any) -> None:
-        self.sync_flavordb()
+        # self.sync_flavordb()
         ingredient_foodb_ids = self.sync_foodb_ingredients()
         self.sync_foodb_content(ingredient_foodb_ids)
