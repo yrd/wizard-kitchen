@@ -3,7 +3,7 @@
 {% block body %}
 	<div class="Container">
 		<header class="Infos">
-			<h1 class="Title">Wizard Kitchen</h1>
+			<h1>Wizard Kitchen</h1>
 			<p class="NoScript">
 				<strong>Heads up!</strong>
 				JavaScript seems to be disabled in your browser, so this site probably won't work the way you expect.
@@ -16,6 +16,9 @@
 				Start by selecting a category down below.
 				Then, use the cards to build your recipe.
 				You can remove ingredients again by clicking on them.
+			</p>
+			<p>
+				<button id="results-button">Get results</button>
 			</p>
 		</header>
 
@@ -139,11 +142,20 @@
 			<span class="delimiter" style="display: none"></span>
 		</div>
 
+		<div id="results-container" class="Results empty">
+
+		</div>
+
 		<div class="Attribution">
-			<p>
-				The data behind this project is freely available from <a href="https://cosylab.iiitd.edu.in/flavordb/" target="_blank" referrerpolicy="no-referrer" crossorigin="anonymous">FlavorDB</a>.
-				It is used in accordance with the <a href="http://creativecommons.org/licenses/by-nc-sa/3.0/" target="_blank" referrerpolicy="no-referrer" crossorigin="anonymous">CC BY-NC-SA 3.0</a> license.
-			</p>
+			<p><small>
+				The data behind this project is merged from a few different sources, used according to their respective licenses:
+				<a href="https://cosylab.iiitd.edu.in/flavordb/" target="_blank" referrerpolicy="no-referrer" crossorigin="anonymous">FlavorDB</a>
+				(<a href="http://creativecommons.org/licenses/by-nc-sa/3.0/" target="_blank" referrerpolicy="no-referrer" crossorigin="anonymous">CC BY-NC-SA 3.0</a>)
+				and
+				<a href="https://foodb.ca/" target="_blank" referrerpolicy="no-referrer" crossorigin="anonymous">FooDB</a>
+				(<a href="http://creativecommons.org/licenses/by-nc/4.0/" target="_blank" referrerpolicy="no-referrer" crossorigin="anonymous">CC BY-NC 4.0</a>).
+				Thank you to the contributors to these databases.
+			</small></p>
 		</div>
 	</div>
 
@@ -170,7 +182,9 @@
 						.forEach((element) => element.disabled = false)
 				}
 
-				const response = await fetch(`{% url "section_cards" %}?section=${encodeURIComponent(selectedSectionInput.value)}`)
+				const response = await fetch(
+					`{% url "section_cards" %}?section=${encodeURIComponent(selectedSectionInput.value)}`
+				)
 				if (!response.ok) {
 					alert(`Error: could not get ingredients. Sorry!`)
 					finish()
@@ -242,37 +256,25 @@
 				finish()
 			})
 		})
+
+		const resultsElement = document.getElementById("results-container")
+		document.getElementById("results-button").addEventListener("click", async () => {
+			resultsElement.classList.add("empty")
+
+			const selectedIngredients = Array.from(
+				document.querySelectorAll(".SelectedIngredients [data-ingredient]")
+			).map((element) => element.dataset.ingredient).join(",")
+
+			const response = await fetch(
+				`{% url "pairing_results" %}?ingredients=${encodeURIComponent(selectedIngredients)}`
+			)
+			if (!response.ok) {
+				alert(`Error: could not get results. Sorry!`)
+				return
+			}
+			resultsElement.innerHTML = await response.text()
+
+			resultsElement.classList.remove("empty")
+		})
 	</script>
-
-
-{#	<main class="Container">#}
-{#		<div class="Main">#}
-{##}
-{#			<form class="IngredientsForm" action="{% url "pairing_results" %}" method="post">#}
-{#				{% for ingredients in ingredient_library %}#}
-{#					<details>#}
-{#						<summary>{{ ingredients.0.category_label }}</summary>#}
-{##}
-{#						{% for ingredient in ingredients %}#}
-{#							<div class="IngredientSelector">#}
-{#								<span>{{ ingredient.display_name }}</span>#}
-{##}
-{#								<input id="ingredient{{ ingredient.pk }}" type="checkbox" name="ingredient{{ ingredient.pk }}" />#}
-{#								<label for="ingredient{{ ingredient.pk }}"></label>#}
-{##}
-{#								<a href="https://cosylab.iiitd.edu.in/flavordb/entity_details?id={{ ingredient.flavordb_id }}" target="_blank" crossorigin="anonymous" referrerpolicy="no-referrer">FlavorDB</a>#}
-{#							</div>#}
-{#						{% endfor %}#}
-{#					</details>#}
-{#				{% endfor %}#}
-{##}
-{#				{% csrf_token %}#}
-{#				<input type="submit" value="Pair!" />#}
-{#			</form>#}
-{#		</div>#}
-{##}
-{#		<div class="Results hidden">#}
-{##}
-{#		</div>#}
-{#	</main>#}
 {% endblock %}

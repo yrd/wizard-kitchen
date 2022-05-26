@@ -1,0 +1,33 @@
+<h2>Cookery Report</h2>
+
+{#<details>#}
+{#	<summary><h3>Selected ingredients</h3></summary>#}
+{#	<ul>#}
+{#		<li><strong>Bread</strong> (Bakery)</li>#}
+{#		<li><strong>Chard</strong> (Vegetables)</li>#}
+{#		<li><strong>Garden Asparagus</strong> (Vegetable Stems)</li>#}
+{#	</ul>#}
+{#</details>#}
+{##}
+{#<h3>Taste distribution</h3>#}
+{##}
+{#<p><small>#}
+{#	This is how we think your meal will taste. Delicious!#}
+{#</small></p>#}
+
+<h3>Matching suggestions</h3>
+
+<p><small>
+	These ingredients share some of their taste molecules with the ones you picked out.
+	Try and see if they go together!
+</small></p>
+
+<ul>
+	{% for ingredient in ingredients %}
+		<li>
+			<strong>{{ ingredient.display_name }}</strong>
+			({{ ingredient.category_label }},
+			{{ ingredient.weighted_score|floatformat }})
+		</li>
+	{% endfor %}
+</ul>

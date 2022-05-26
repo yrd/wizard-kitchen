@@ -12,6 +12,15 @@ from .ingredients import views as ingredients_views
 
 urlpatterns = [
     path("", ingredients_views.index, name="index"),
-    path("data/section_cards", ingredients_views.section_cards, name="section_cards"),
+    path(
+        "_data/section_cards",
+        ingredients_views.section_cards,
+        name="section_cards",
+    ),
+    path(
+        "_data/pairing_results",
+        ingredients_views.pairing_results,
+        name="pairing_results",
+    ),
     path("admin/", admin.site.urls),
 ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)
