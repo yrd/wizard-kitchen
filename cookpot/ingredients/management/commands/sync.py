@@ -288,13 +288,14 @@ class Command(BaseCommand):
 
                     # If the initial name we got does not produce a match, there are a
                     # few other mappings we can try in order to get the names to match
-                    # the format the FlavorDB uses. These come in the form of prefixes
-                    # that we can remove.
+                    # the format the FlavorDB uses.
                     mangled_name_candidates = [initial_mangled_name]
                     if initial_mangled_name.startswith("common"):
                         mangled_name_candidates.append(initial_mangled_name[6:])
                     if initial_mangled_name.startswith("garden"):
                         mangled_name_candidates.append(initial_mangled_name[6:])
+                    if initial_mangled_name == "eggs":
+                        mangled_name_candidates[0] = "egg"
 
                     for index, mangled_name in enumerate(mangled_name_candidates):
                         if mangled_name in known_mangled_names:
