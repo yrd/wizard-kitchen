@@ -166,7 +166,7 @@ strong {
 
 .Infos {
 	padding: var(--gap-s) var(--gap-l);
-	overflow: scroll;
+	overflow-y: auto;
 }
 
 .Attribution {
@@ -850,7 +850,7 @@ $inline-card-size: 8rem;
 		z-index: 2;
 		block-size: 100%;
 		border-bottom-left-radius: 1rem;
-		overflow: scroll;
+		overflow-y: auto;
 		border: var(--stroke-m) solid var(--stroke-color);
 		box-shadow: 0.1rem -0.1rem 0.2rem hsla(var(--text-hsl), 0.5) inset;
 		background-image: var(--noise-texture);
