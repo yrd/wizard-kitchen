@@ -10,6 +10,7 @@
 	--radius-m: 0.5rem;
 	--radius-s: 0.2rem;
 
+	--text-xl: 2rem;
 	--text-l: 1.2rem;
 	--text-m: 1rem;
 	--text-s: 0.8rem;
@@ -110,7 +111,7 @@ small {
 	display: grid;
 	grid-template: "header info results" 1fr
 		"footer info results" auto
-		"cards cards cards" auto / 30rem 1fr 40rem;
+		"cards cards cards" auto / minmax(20rem, 35rem) 1fr minmax(30rem, 45rem);
 	gap: var(--gap-l);
 	height: 100vh;
 
@@ -137,20 +138,76 @@ small {
 
 .Infos {
 	padding: var(--gap-s) var(--gap-l);
+	overflow: scroll;
 }
 
 .Attribution {
 	padding: var(--gap-s) var(--gap-l);
 }
 
-.NoScript {
+.NoScript,
+.Screensize-Blocker {
 	color: #e55e40;
+}
+
+.Screensize-Blocker {
+	display: none;
 }
 
 %HiddenInput {
 	position: absolute;
 	opacity: 0;
 	pointer-events: none;
+}
+
+@media screen and (max-width: 94rem) and (max-height: 64rem) {
+	.Container {
+		display: none;
+	}
+
+	.Screensize-Blocker {
+		display: block;
+		position: fixed;
+		inset: 0;
+		padding: var(--gap-s);
+		text-align: center;
+	}
+}
+
+.HeroButton {
+	@keyframes HeroButton-cycle {
+		0% {
+			border-color: hsl(var(--primary-hsl), var(--opacity));
+			color: hsl(var(--primary-hsl), var(--opacity));
+		}
+		33% {
+			border-color: hsl(var(--secondary-hsl), var(--opacity));
+			color: hsl(var(--secondary-hsl), var(--opacity));
+		}
+		66% {
+			border-color: hsl(var(--ternary-hsl), var(--opacity));
+			color: hsl(var(--ternary-hsl), var(--opacity));
+		}
+		100% {
+			border-color: hsl(var(--primary-hsl), var(--opacity));
+			color: hsl(var(--primary-hsl), var(--opacity));
+		}
+	}
+
+	--opacity: var(--hinted-opacity);
+	display: block;
+	margin-block: var(--gap-m);
+	inline-size: 100%;
+	border: var(--stroke-s) solid black;
+	border-radius: var(--radius-m);
+	font-size: var(--text-xl);
+	background: none;
+	cursor: pointer;
+	animation: HeroButton-cycle 6s linear 0s infinite;
+
+	&:hover {
+		--opacity: 1;
+	}
 }
 
 /**
