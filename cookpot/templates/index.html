@@ -143,7 +143,12 @@
 		</div>
 
 		<div id="results-container" class="Results empty">
-
+			<div class="content-container">
+				<div class="inner-content"></div>
+			</div>
+			<div class="top-holster"></div>
+			<div class="backside"></div>
+			<div class="bottom-holster"></div>
 		</div>
 
 		<div class="Attribution">
@@ -272,7 +277,7 @@
 				alert(`Error: could not get results. Sorry!`)
 				return
 			}
-			resultsElement.innerHTML = await response.text()
+			resultsElement.querySelector(".inner-content").innerHTML = await response.text()
 
 			resultsElement.classList.remove("empty")
 		})
