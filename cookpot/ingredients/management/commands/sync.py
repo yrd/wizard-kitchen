@@ -5,6 +5,7 @@ from collections.abc import Mapping, Sequence
 from typing import Any
 
 import requests
+from django.core.cache import caches
 from django.core.management.base import BaseCommand
 from django.db import models, transaction
 from django.db.models import functions
@@ -90,10 +91,18 @@ class Command(BaseCommand):
         assert isinstance(
             raw_aliases := data.get("entity_alias_synonyms"), str
         ), f"Entity names property must be a string, got {type(raw_aliases)}."
-        all_names = {
+        # Note: don't use a set here because the order is actually important.
+        all_names = [
             unicodedata.normalize("NFC", name.strip())
             for name in f"{main_name},{raw_aliases}".split(",")
-        }
+        ]
+        # Do a quick and dirty duplicate check. This should handle 99% of all entries
+        # because sometimes the aliases contain the main name.
+        try:
+            if all_names[0] == all_names[1]:
+                del all_names[0]
+        except IndexError:
+            pass
         for index, label in enumerate(all_names):
             if not label:
                 continue
@@ -107,11 +116,17 @@ class Command(BaseCommand):
     def sync_flavordb(self) -> None:
         session = requests.Session()
         for entity_id in range(1000):
-            response = session.get(
-                "https://cosylab.iiitd.edu.in/flavordb/entities_json",
-                params={"id": entity_id},
-                headers={"Accept": "application/json"},
-            )
+            cache_key = f"flavordb_{entity_id}"
+            response = caches["default"].get(cache_key, None)
+            if response is None:
+                response = session.get(
+                    "https://cosylab.iiitd.edu.in/flavordb/entities_json",
+                    params={"id": entity_id},
+                    headers={"Accept": "application/json"},
+                )
+                caches["default"].set(cache_key, response, None)
+            assert isinstance(response, requests.Response)
+
             if response.status_code == 404:
                 logging.warning(f"[FlavorDB] Entity {entity_id}: entity not found.")
                 continue
@@ -240,7 +255,11 @@ class Command(BaseCommand):
             except KeyError:
                 return False
 
-        content_amount = float(line_data["orig_content"])
+        try:
+            content_amount = float(line_data["orig_content"])
+        except TypeError:
+            # Some records don't have this field.
+            return False
         ingredient_molecule_entry, _ = IngredientMolecule.objects.get_or_create(
             ingredient=ingredient, molecule=molecule
         )
@@ -308,6 +327,6 @@ class Command(BaseCommand):
         logging.debug(f"[FooDB content] updated {updated_count} entries.")
 
     def handle(self, *args: Any, **options: Any) -> None:
-        # self.sync_flavordb()
+        self.sync_flavordb()
         ingredient_foodb_ids = self.sync_foodb_ingredients()
         self.sync_foodb_content(ingredient_foodb_ids)

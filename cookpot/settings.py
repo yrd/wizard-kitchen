@@ -90,10 +90,32 @@ WSGI_APPLICATION = "cookpot.wsgi.application"
 # https://docs.djangoproject.com/en/4.0/ref/settings/#databases
 
 DATABASES = {
+    # "default": {
+    #     "ENGINE": "django.db.backends.sqlite3",
+    #     "NAME": DATA_DIR / "db.sqlite3",
+    # }
     "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": DATA_DIR / "db.sqlite3",
+        "ENGINE": "django.db.backends.postgresql",
+        "NAME": "postgres",
+        "USER": "postgres",
+        "PASSWORD": "harrypotter",
+        "HOST": "127.0.0.1",
+        "PORT": "5432",
     }
+}
+
+# Cache
+# https://docs.djangoproject.com/en/4.0/ref/settings/#caches
+
+CACHES = {
+    "default": {
+        "BACKEND": "django.core.cache.backends.filebased.FileBasedCache",
+        "LOCATION": DATA_DIR / "cache",
+        "OPTIONS": {
+            # The FlavorDB dataset (the one we cache) is about 1000 entries in size.
+            "MAX_ENTRIES": 1500,
+        },
+    },
 }
 
 
