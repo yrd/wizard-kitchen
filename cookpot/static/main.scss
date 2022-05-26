@@ -1,18 +1,18 @@
 @use 'sass:math';
 
 :root {
-  --gap-xs: 0.5rem;
-  --gap-s: 1rem;
-  --gap-m: 1.5rem;
-  --gap-l: 2.5rem;
+	--gap-xs: 0.5rem;
+	--gap-s: 1rem;
+	--gap-m: 1.5rem;
+	--gap-l: 2.5rem;
 
-  --radius-l: 1.5rem;
-  --radius-m: 0.5rem;
-  --radius-s: 0.2rem;
+	--radius-l: 1.5rem;
+	--radius-m: 0.5rem;
+	--radius-s: 0.2rem;
 
-  --text-l: 1.2rem;
-  --text-m: 1rem;
-  --text-s: 0.8rem;
+	--text-l: 1.2rem;
+	--text-m: 1rem;
+	--text-s: 0.8rem;
 
 	--stroke-s: 1px;
 	--stroke-m: 0.15rem;
@@ -21,11 +21,11 @@
 	--inverse-text-hsl: 210, 20%, 20%;
 	--primary-hsl: 40, 74%, 57%;
 	--secondary-hsl: 84, 38%, 54%;
-  --ternary-hsl: 9, 69%, 61%;
+	--ternary-hsl: 9, 69%, 61%;
 	--surface-hsl: 225, 20%, 16%;
 	--stroke-color: hsl(0, 0%, 13%);
 
-  --hinted-opacity: 0.8;
+	--hinted-opacity: 0.8;
 	--muted-opacity: 0.5;
 
 	--subtle-motion: 0.1s cubic-bezier(.37,.18,.29,1.03);
@@ -107,32 +107,32 @@ small {
  */
 
 .Container {
-  display: grid;
-  grid-template: "header info results" 1fr
+	display: grid;
+	grid-template: "header info results" 1fr
 		"footer info results" auto
-    "cards cards cards" auto / 30rem 1fr 40rem;
-  gap: var(--gap-l);
-  height: 100vh;
+		"cards cards cards" auto / 30rem 1fr 40rem;
+	gap: var(--gap-l);
+	height: 100vh;
 
-  > .Infos {
-    grid-area: header;
-  }
+	> .Infos {
+		grid-area: header;
+	}
 
-  > .Cauldron {
-    grid-area: info;
-  }
+	> .Cauldron {
+		grid-area: info;
+	}
 
-  > .Cards {
-    grid-area: cards;
-  }
+	> .Cards {
+		grid-area: cards;
+	}
 
 	> .Results {
 		grid-area: results;
 	}
 
-  > .Attribution {
-    grid-area: footer;
-  }
+	> .Attribution {
+		grid-area: footer;
+	}
 }
 
 .Infos {
