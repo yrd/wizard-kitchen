@@ -51,6 +51,12 @@
             | ${pkgs.perl}/bin/perl -pe 's, @ file:///build/source.*?/dist/.*?-((\d+\.)*\d+).*\.whl$,==\1,g' \
             > $out
         '';
+
+        release = (pkgs.python310.override {
+					packageOverrides = self: super: {
+						cookpot = self.callPackage ./nix/python-packages/cookpot.nix {};
+					};
+				}).withPackages (pythonPackages: [ pythonPackages.cookpot ]);
       };
 
       devShell = python.env;
