@@ -7,10 +7,26 @@ from django.utils.translation import gettext_lazy as _
 
 class IngredientQuerySet(models.QuerySet["Ingredient"]):
     def annotate_display_name(self) -> IngredientQuerySet:
+        """Annotate a ``display_name`` property that contains the name of the ingredient
+        that should be dispalyed to the user."""
         return self.annotate(
             display_name=IngredientName.objects.filter(
                 ingredient=models.OuterRef("pk")
             ).values("label")[:1]
+        )
+
+    def filter_with_data(self) -> IngredientQuerySet:
+        """Filter out objects that don't have any molecule data (yet)."""
+        return self.filter(
+            models.Exists(
+                IngredientMolecule.objects.filter(
+                    (
+                        models.Q(flavordb_found=True)
+                        | models.Q(foodb_content_sample_count__gt=0)
+                    ),
+                    ingredient=models.OuterRef("pk"),
+                )
+            )
         )
 
 

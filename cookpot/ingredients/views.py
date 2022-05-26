@@ -49,7 +49,10 @@ def section_cards(request: HttpRequest) -> HttpResponse:
     assert isinstance(section, str)
 
     all_ingredients = list(
-        Ingredient.objects.filter(category__startswith=section)
+        Ingredient.objects.filter_with_data()
+        .filter(
+            category__startswith=section,
+        )
         .annotate_display_name()
         .order_by("display_name")
     )
@@ -131,7 +134,8 @@ def pairing_results(request: HttpRequest) -> HttpResponse:
 
     # This is the final result query that finds other ingredients that could match.
     suggested_ingredients = (
-        Ingredient.objects.annotate(
+        Ingredient.objects.filter_with_data()
+        .annotate(
             weighted_score=models.Subquery(
                 IngredientMolecule.objects.filter(
                     ingredient=models.OuterRef("pk"),
