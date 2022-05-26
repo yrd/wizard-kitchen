@@ -1,5 +1,6 @@
 import json
 import logging
+import os
 import re
 import unicodedata
 from collections.abc import Mapping, Sequence
@@ -7,7 +8,7 @@ from typing import Any
 
 import requests
 from django.core.cache import caches
-from django.core.management.base import BaseCommand
+from django.core.management.base import BaseCommand, CommandParser
 from django.db import models, transaction
 from django.db.models import functions
 
@@ -210,7 +211,10 @@ class Command(BaseCommand):
                     f"[FlavorDB] Entity {entity_id}: error while processing."
                 )
 
-    def sync_foodb_ingredients(self) -> dict[int, str]:
+    def sync_foodb_ingredients(
+        self,
+        foodb_path: str,
+    ) -> dict[int, str]:
         unhandled_items = list[Mapping[str, Any]]()
 
         ingredient_names = (
@@ -248,7 +252,7 @@ class Command(BaseCommand):
         class Done(Exception):
             pass
 
-        with open("/tmp/foodb_2020_04_07_json/Food.json", "r") as food_file:
+        with open(f"{foodb_path}/Food.json", "r") as food_file:
             for line_index, line in enumerate(food_file.readlines()):
                 try:
                     line_data = json.loads(line)
@@ -430,10 +434,10 @@ class Command(BaseCommand):
 
         return True
 
-    def sync_foodb_content(self, ingredient_foodb_ids: dict[int, str]):
+    def sync_foodb_content(self, foodb_path: str, ingredient_foodb_ids: dict[int, str]):
         molecule_foodb_ids = dict[int, str]()
 
-        with open("/tmp/foodb_2020_04_07_json/Compound.json", "r") as compound_file:
+        with open(f"{foodb_path}/Compound.json", "r") as compound_file:
             for line_index, line in enumerate(compound_file.readlines()):
                 try:
                     line_data = json.loads(line)
@@ -460,7 +464,7 @@ class Command(BaseCommand):
         molecule_cache = dict[int, Molecule]()
         updated_count = 0
 
-        with open("/tmp/foodb_2020_04_07_json/Content.json", "r") as content_file:
+        with open(f"{foodb_path}/Content.json", "r") as content_file:
             for line_index, line in enumerate(content_file.readlines()):
                 try:
                     line_data = json.loads(line)
@@ -483,7 +487,21 @@ class Command(BaseCommand):
 
         logging.debug(f"[FooDB content] updated {updated_count} entries.")
 
+    def add_arguments(self, parser: CommandParser) -> None:
+        parser.add_argument("--foodb-path", nargs="?", type=str)
+
     def handle(self, *args: Any, **options: Any) -> None:
+        assert isinstance(
+            foodb_path := options.get("foodb_path", None), str
+        ), "--foodb-path argument must be provided."
+        if not os.path.isdir(foodb_path):
+            raise ValueError(
+                "The --foodb-path argument must point to the location where the FooDB "
+                "data dump (in JSON format) is extracted."
+            )
+        if foodb_path.endswith("/"):
+            foodb_path = foodb_path[:-1]
+
         # self.sync_flavordb()
-        ingredient_foodb_ids = self.sync_foodb_ingredients()
-        self.sync_foodb_content(ingredient_foodb_ids)
+        ingredient_foodb_ids = self.sync_foodb_ingredients(foodb_path)
+        self.sync_foodb_content(foodb_path, ingredient_foodb_ids)
