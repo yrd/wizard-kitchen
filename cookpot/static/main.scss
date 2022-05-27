@@ -320,6 +320,15 @@ $inline-card-size: 8rem;
 	position: relative;
 	text-align: center;
 
+	&.single {
+		--card-count: 1;
+
+		> label > * {
+			// We need this to catch the zero-devision error.
+			--factor: 0;
+		}
+	}
+
 	> label {
 		@keyframes CardFan-label-enter {
 			from {
@@ -332,7 +341,7 @@ $inline-card-size: 8rem;
 		position: relative;
 		block-size: $block-card-size;
 		inline-size: calc(90% / var(--card-count));
-		max-inline-size: 0.7 * $inline-card-size;
+		max-inline-size: $inline-card-size;
 		animation: CardFan-label-enter var(--subtle-motion) both;
 
 
@@ -370,11 +379,6 @@ $inline-card-size: 8rem;
 				rotate(0deg) scale(2);
 			transition-duration: 0s;
 		}
-	}
-
-	&.single > label > * {
-		// We need this to catch the zero-devision error.
-		--factor: 0;
 	}
 
 	> input[type=checkbox] {
