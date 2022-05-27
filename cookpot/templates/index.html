@@ -136,6 +136,8 @@
 		</div>
 
 		<div class="Cards">
+			<input id="ingredient-search" class="CategorySelector search" type="text" placeholder="Search" />
+
 			{% for section, section_label in sections %}
 				<input id="selectedsection-{{ section }}" name="selectedsection" type="radio" value="{{ section }}" />
 				<label class="CategorySelector section" for="selectedsection-{{ section }}">{{ section_label }}</label>
@@ -183,97 +185,124 @@
 		document.querySelectorAll(".NoScript")
 			.forEach((element) => element.remove())
 
-		document.querySelectorAll("input[name=selectedsection]").forEach((selectedSectionInput) => {
-			selectedSectionInput.addEventListener("input", async () => {
+		function clearLoadedSection() {
+			document.querySelectorAll(".Cards > .delimiter ~ *")
+				.forEach((element) => element.remove())
+		}
+
+		async function loadSection(query) {
+			clearLoadedSection()
+
+			// Keep the inputs disabled until we have our result.
+			document.querySelectorAll("input[name=selectedsection]")
+				.forEach((element) => element.disabled = true)
+			document.getElementById("ingredient-search").disabled = true
+			function finish() {
+				document.querySelectorAll("input[name=selectedsection]")
+					.forEach((element) => element.disabled = false)
+				document.getElementById("ingredient-search").disabled = false
+			}
+
+			const response = await fetch(
+				`{% url "section_cards" %}?${query}`
+			)
+			if (!response.ok) {
+				alert(`Error: could not get ingredients. Sorry!`)
+				finish()
+				return
+			}
+
+			document.querySelector(".Cards > .delimiter")
+				.insertAdjacentHTML("afterend", await response.text())
+
+			// Make sure the inputs for the already selected ingredients are also
+			// selected.
+			for (const element of document.querySelectorAll(".SelectedIngredients [data-ingredient]")) {
+				const checkbox = document.querySelector(`.Cards input[type=checkbox][data-ingredient="${encodeURIComponent(element.dataset.ingredient)}"]`)
+				if (checkbox) {
+					checkbox.checked = true
+				}
+			}
+
+			for (const checkbox of document.querySelectorAll(".Cards input[type=checkbox][data-ingredient]")) {
+				const ingredientSelector = `[data-ingredient="${encodeURIComponent(checkbox.dataset.ingredient)}"]`;
+
+				checkbox.addEventListener("input", () => {
+					checkbox.blur()
+
+					if (checkbox.checked) {
+						const listItem = document.createElement("li")
+						const button = document.createElement("button")
+						button.dataset.ingredient = checkbox.dataset.ingredient
+						button.innerText = checkbox.dataset.label
+						listItem.append(button)
+						document.querySelector(".SelectedIngredients").append(listItem)
+
+						button.addEventListener("click", () => {
+							button.parentElement.remove()
+							const checkbox = document.querySelector(`.Cards input[type=checkbox]${ingredientSelector}`);
+							if (checkbox) {
+								checkbox.checked = false;
+							}
+						})
+
+						// Play the animation
+						const cauldronElement = document.querySelector(".Cauldron")
+						if (!cauldronElement.classList.contains("dropping")) {
+							const nextHue = Math.floor(Math.random() * 360)
+							cauldronElement.style.setProperty("--drop-hue", nextHue)
+							const dropRotation = Math.floor(Math.random() * 360)
+							cauldronElement.style.setProperty("--drop-rotation", `${dropRotation}deg`)
+
+							cauldronElement.classList.add("dropping")
+							window.setTimeout(
+								() => cauldronElement.style.setProperty("--hue", nextHue),
+								1800,
+							)
+							window.setTimeout(
+								() => cauldronElement.classList.remove("dropping"),
+								2400,
+							)
+						}
+					} else {
+						document
+							.querySelector(`.SelectedIngredients > li > button${ingredientSelector}`)
+							.parentElement
+							.remove()
+					}
+				})
+			}
+
+			const firstCategoryInput = document.querySelector("input[name=selectedcategory]");
+			if (firstCategoryInput !== null) {
+				firstCategoryInput.checked = true
+			}
+
+			finish()
+		}
+
+		document.querySelectorAll("input[name=selectedsection]")
+			.forEach((selectedSectionInput) => selectedSectionInput.addEventListener("input", async () => {
 				if (!selectedSectionInput.checked) {
 					return
 				}
+				await loadSection(`section=${encodeURIComponent(selectedSectionInput.value)}`)
+			}))
 
-				// Remove the stuff from the old section.
-				document.querySelectorAll(".Cards > .delimiter ~ *")
-					.forEach((element) => element.remove())
-
-				// Keep the inputs disabled until we have our result.
-				document.querySelectorAll("input[name=selectedsection]")
-					.forEach((element) => element.disabled = true)
-				function finish() {
-					document.querySelectorAll("input[name=selectedsection]")
-						.forEach((element) => element.disabled = false)
-				}
-
-				const response = await fetch(
-					`{% url "section_cards" %}?section=${encodeURIComponent(selectedSectionInput.value)}`
-				)
-				if (!response.ok) {
-					alert(`Error: could not get ingredients. Sorry!`)
-					finish()
-					return
-				}
-
-				document.querySelector(".Cards > .delimiter")
-					.insertAdjacentHTML("afterend", await response.text())
-
-				// Make sure the inputs for the already selected ingredients are also
-				// selected.
-				for (const element of document.querySelectorAll(".SelectedIngredients [data-ingredient]")) {
-					const checkbox = document.querySelector(`.Cards input[type=checkbox][data-ingredient="${encodeURIComponent(element.dataset.ingredient)}"]`)
-					if (checkbox) {
-						checkbox.checked = true
-					}
-				}
-
-				for (const checkbox of document.querySelectorAll(".Cards input[type=checkbox][data-ingredient]")) {
-					const ingredientSelector = `[data-ingredient="${encodeURIComponent(checkbox.dataset.ingredient)}"]`;
-
-					checkbox.addEventListener("input", () => {
-						checkbox.blur()
-
-						if (checkbox.checked) {
-							const listItem = document.createElement("li")
-							const button = document.createElement("button")
-							button.dataset.ingredient = checkbox.dataset.ingredient
-							button.innerText = checkbox.dataset.label
-							listItem.append(button)
-							document.querySelector(".SelectedIngredients").append(listItem)
-
-							button.addEventListener("click", () => {
-								button.parentElement.remove()
-								const checkbox = document.querySelector(`.Cards input[type=checkbox]${ingredientSelector}`);
-								if (checkbox) {
-									checkbox.checked = false;
-								}
-							})
-
-							// Play the animation
-							const cauldronElement = document.querySelector(".Cauldron")
-							if (!cauldronElement.classList.contains("dropping")) {
-								const nextHue = Math.floor(Math.random() * 360)
-								cauldronElement.style.setProperty("--drop-hue", nextHue)
-								const dropRotation = Math.floor(Math.random() * 360)
-								cauldronElement.style.setProperty("--drop-rotation", `${dropRotation}deg`)
-
-								cauldronElement.classList.add("dropping")
-								window.setTimeout(
-									() => cauldronElement.style.setProperty("--hue", nextHue),
-									1800,
-								)
-								window.setTimeout(
-									() => cauldronElement.classList.remove("dropping"),
-									2400,
-								)
-							}
-						} else {
-							document
-								.querySelector(`.SelectedIngredients > li > button${ingredientSelector}`)
-								.parentElement
-								.remove()
-						}
-					})
-				}
-
-				document.querySelector("input[name=selectedcategory]").checked = true
-				finish()
-			})
+		const ingredientSearchInput = document.getElementById("ingredient-search")
+		ingredientSearchInput.addEventListener("focus", () => {
+			clearLoadedSection()
+			ingredientSearchInput.value = ""
+			const selectedSectionInput = document.querySelector("input[name=selectedsection]:checked")
+			if (selectedSectionInput !== null) {
+				selectedSectionInput.checked = false
+			}
+		})
+		ingredientSearchInput.addEventListener("blur", async () => {
+			const searchQuery = ingredientSearchInput.value.trim()
+			if (searchQuery) {
+				await loadSection(`query=${searchQuery}`)
+			}
 		})
 
 		const resultsElement = document.getElementById("results-container")

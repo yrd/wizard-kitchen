@@ -1,6 +1,6 @@
 import math
-import re
 
+from django.contrib.postgres.search import SearchQuery, SearchRank, SearchVector
 from django.db import models
 from django.db.models import expressions, functions
 from django.http import (
@@ -35,8 +35,9 @@ def index(request: HttpRequest) -> HttpResponse:
             "sections": sections_with_labels,
             # This is the number of sections missing to fill the column. A spacer will
             # be rendered for each of these so that the category selectors begin at the
-            # top again. Keep this in sync with the stylesheet.
-            "missing_sections": range(10 - len(sections_with_labels) % 10),
+            # top again. Keep this in sync with the stylesheet. We add two to account
+            # for the search bar.
+            "missing_sections": range(10 - ((len(sections_with_labels) + 2) % 10)),
         },
     )
 
@@ -44,18 +45,38 @@ def index(request: HttpRequest) -> HttpResponse:
 def section_cards(request: HttpRequest) -> HttpResponse:
     if request.method != "GET":
         return HttpResponseNotAllowed(permitted_methods=["GET"])
-    if not (section := request.GET.get("section", "")):
+
+    section = request.GET.get("section", "").strip()
+    search_query = request.GET.get("query", "").strip()
+    if (not section and not search_query) or (section and search_query):
         return HttpResponseBadRequest()
     assert isinstance(section, str)
 
-    all_ingredients = list(
-        Ingredient.objects.filter_with_data()
-        .filter(
-            category__startswith=section,
+    # When getting a single section, we want to group them by category. When searching,
+    # we just want to return everything.
+    if search_query:
+        all_ingredients = list(
+            Ingredient.objects.filter_with_data()
+            .annotate(
+                rank=SearchRank(SearchVector("name__label"), SearchQuery(search_query)),
+            )
+            .annotate_display_name()
+            .filter(rank__gt=0)
+            .order_by("-rank")
+            .distinct()[:30]
         )
-        .annotate_display_name()
-        .order_by("display_name")
-    )
+        # The results should all have the same category because we don't want
+        # to group them.
+        for ingredient in all_ingredients:
+            ingredient.category = "Search"
+    else:
+        all_ingredients = list(
+            Ingredient.objects.filter_with_data()
+            .filter(category__startswith=section)
+            .annotate_display_name()
+            .order_by("display_name")
+        )
+
     categories = sorted({ingredient.category for ingredient in all_ingredients})
 
     library = list[tuple[str, str, list[Ingredient]]]()

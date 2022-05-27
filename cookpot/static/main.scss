@@ -279,13 +279,19 @@ strong {
 	box-shadow: 0 0 0 0.2rem hsla(0, 0%, 0%, 0.2);
 	transition: border-color var(--subtle-motion), background-color var(--subtle-motion), box-shadow var(--subtle-motion);
 
-	&:hover {
+	&:hover,
+	&:focus {
 		border-color: hsl(var(--hsl));
 		background-color: hsl(var(--surface-hsl));
 	}
 
 	&.section {
 		--hsl: var(--primary-hsl);
+	}
+
+	&.search {
+		--hsl: var(--ternary-hsl);
+		grid-column: 1 / span 2;
 	}
 }
 
