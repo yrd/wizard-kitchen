@@ -15,15 +15,22 @@
 {#	This is how we think your meal will taste. Delicious!#}
 {#</small></p>#}
 
-<h3>Matching suggestions</h3>
+<h3>Suggested ingredients</h3>
+
+<p>
+	Matching score: <strong>{{ matching_score|floatformat }}%</strong>
+</p>
 
 <p><small>
-	These ingredients share some of their taste molecules with the ones you picked out.
-	Try and see if they go together!
+	This number tells you how good your ingredients go together.
+	If you only picked one, it will always be a lousy 100%.
+	If not, well good luck finding an exceptionally well-scored combination!
 </small></p>
 
+<h3>Suggested ingredients</h3>
+
 <ul>
-	{% for ingredient in ingredients %}
+	{% for ingredient in suggested_ingredients %}
 		<li>
 			<strong>{{ ingredient.display_name }}</strong>
 			({{ ingredient.category_label }},
@@ -31,3 +38,8 @@
 		</li>
 	{% endfor %}
 </ul>
+
+<p><small>
+	These ingredients share some of their taste with the ones you picked out.
+	The numbers are truly magical &ndash; it suffices to know that things ranked higher will probably suit your dish better.
+</small></p>

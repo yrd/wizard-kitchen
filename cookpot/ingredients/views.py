@@ -11,7 +11,7 @@ from django.http import (
 )
 from django.shortcuts import render
 
-from .models import Ingredient, IngredientMolecule
+from .models import Ingredient, IngredientMolecule, Molecule
 
 
 def index(request: HttpRequest) -> HttpResponse:
@@ -141,12 +141,46 @@ def pairing_results(request: HttpRequest) -> HttpResponse:
         )
     ).filter(score__gt=0)
 
-    # Next, group by molecule and sum up these scores for all the ingredients that were
+    ##################
+    # Matching score #
+    ##################
+
+    # Find those molecules that are present in all the provided ingredients.
+    shared_molecules = Molecule.objects.filter(
+        *[
+            models.Exists(
+                IngredientMolecule.objects.filter(
+                    models.Q(foodb_content_sample_count__gt=0)
+                    | models.Q(flavordb_found=True),
+                    molecule=models.OuterRef("pk"),
+                    ingredient=ingredient_pk,
+                )
+            )
+            for ingredient_pk in selected_ingredient_pks
+        ]
+    )
+    shared_ingredient_score = ingredient_molecules_with_score.filter(
+        ingredient__in=selected_ingredient_pks, molecule__in=shared_molecules
+    ).aggregate(value=models.Sum("score"))
+    total_ingredient_score = ingredient_molecules_with_score.filter(
+        ingredient__in=selected_ingredient_pks
+    ).aggregate(value=models.Sum("score"))
+    try:
+        matching_score = (
+            shared_ingredient_score.get("value", 0)
+            / total_ingredient_score.get("value", 0)
+        ) * 100
+    except ZeroDivisionError:
+        matching_score = 0
+
+    #########################
+    # Suggested ingredients #
+    #########################
+
+    # Group by molecule and sum up these scores for all the ingredients that were
     # selected. This gives us a list of molecules in our query.
     ranked_molecules = (
-        ingredient_molecules_with_score.filter(
-            ingredient__pk__in=selected_ingredient_pks
-        )
+        ingredient_molecules_with_score.filter(ingredient__in=selected_ingredient_pks)
         # Group by molecule and calculate a total score for each molecule.
         .values("molecule")
         .annotate(total_score=models.Sum("score"))
@@ -154,7 +188,7 @@ def pairing_results(request: HttpRequest) -> HttpResponse:
     )
 
     # This is the final result query that finds other ingredients that could match.
-    suggested_ingredients = (
+    suggested_ingredients_base = (
         Ingredient.objects.filter_with_data()
         .annotate(
             weighted_score=models.Subquery(
@@ -201,20 +235,27 @@ def pairing_results(request: HttpRequest) -> HttpResponse:
         ranked_molecules_params,
     ) = ranked_molecules.query.sql_with_params()
     (
-        suggested_ingredients_sql,
-        suggested_ingredients_params,
-    ) = suggested_ingredients.query.sql_with_params()
+        suggested_ingredients_base_sql,
+        suggested_ingredients_base_params,
+    ) = suggested_ingredients_base.query.sql_with_params()
 
-    result = Ingredient.objects.raw(
+    suggested_ingredients = Ingredient.objects.raw(
         f"""
         WITH
             ranked_molecules AS ({ranked_molecules_sql}),
 
             max_score AS (SELECT MAX(total_score) FROM ranked_molecules)
 
-        {suggested_ingredients_sql}
+        {suggested_ingredients_base_sql}
         """,
-        (*ranked_molecules_params, *suggested_ingredients_params),
+        (*ranked_molecules_params, *suggested_ingredients_base_params),
     )
 
-    return render(request, "data/pairing_results.html", {"ingredients": result[:15]})
+    return render(
+        request,
+        "data/pairing_results.html",
+        {
+            "matching_score": matching_score,
+            "suggested_ingredients": suggested_ingredients[:15],
+        },
+    )
