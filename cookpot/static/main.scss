@@ -574,20 +574,21 @@ $inline-card-size: 8rem;
 				}
 			}
 
-			> :nth-child(1) {
+			> rect {
 				fill: hsl(var(--hue), 40%, 40%);
 			}
 
-			> :nth-child(2) {
-				fill: hsl(var(--hue), 100%, 80%);
+			> path {
 				mix-blend-mode: overlay;
 				animation: Cauldron-content-move 9s linear 0s infinite;
+				filter: blur(0.5rem);
 			}
 
-			> :nth-child(3) {
-				fill: hsl(var(--hue), 90%, 90%);
-				mix-blend-mode: overlay;
-				animation: Cauldron-content-move 10s linear 0s infinite reverse;
+			@for $i from 1 through 4 {
+				> path:nth-of-type(#{$i}) {
+					fill: hsl(var(--hue), #{math.random(50) * 1% + 50%}, math.random(10) * 1% + 90%) !important;
+					animation-delay: math.random(9) * -1s;
+				}
 			}
 		}
 
