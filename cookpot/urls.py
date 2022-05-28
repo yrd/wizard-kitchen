@@ -18,7 +18,7 @@ urlpatterns = [
     ),
     path(
         "_data/pairing_results",
-        ingredients_views.pairing_results,
+        ingredients_views.PairingResultsView.as_view(),
         name="pairing_results",
     ),
 ] + static(settings.STATIC_URL, document_root=settings.STATIC_ROOT)

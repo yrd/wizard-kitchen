@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from django.core import validators
 from django.db import models
+from django.db.models import expressions
 from django.utils.translation import gettext_lazy as _
 
 
@@ -229,7 +230,72 @@ class Molecule(models.Model):
         verbose_name_plural = _("molecules")
 
 
-class IngredientMolecule(models.Model):
+class MoleculeOccurrenceQuerySet(models.QuerySet["MoleculeOccurrence"]):
+    def with_score(self, *, filter_zero: bool = True) -> MoleculeOccurrenceQuerySet:
+        """Annotate a ``score`` value on each occurrence object.
+
+        This is a float which more or less states the amount the molecule is present in
+        the ingredient, in milligram per 100 gramms of ingredient.
+
+        :param filter_zero: Setting this to ``True`` (the default) will filter out
+            results with a score of zero.
+        """
+        # Calculate the median of all FooDB content values. We use this as the constant
+        # score value for ingredients from FlavorDB, because the relation is only binary
+        # in that source.
+        foodb_contents = MoleculeOccurrence.objects.filter(
+            foodb_content_sample_count__gt=0
+        ).values(
+            score=models.F("foodb_content_sum") / models.F("foodb_content_sample_count")
+        )
+        (
+            foodb_contents_sql,
+            foodb_contents_params,
+        ) = foodb_contents.query.sql_with_params()
+        median_foodb_content = expressions.RawSQL(
+            f"""
+            WITH scores AS ({foodb_contents_sql})
+
+            SELECT score
+            FROM scores
+            LIMIT 1
+            OFFSET (SELECT COUNT(*) / 2 FROM scores)
+            """,
+            foodb_contents_params,
+        )
+
+        queryset = self.annotate(
+            score=models.Case(
+                # Prefer data from FooDB, if it is available.
+                models.When(
+                    models.Q(foodb_content_sample_count__gt=0),
+                    then=(
+                        models.F("foodb_content_sum")
+                        / models.F("foodb_content_sample_count")
+                    ),
+                ),
+                # Otherwise, check if FlavorDB has a record. Here, we don't really have
+                # a way to calculate the score, so we give all FlavorDB records a fixed
+                # value.
+                models.When(
+                    models.Q(flavordb_found=True),
+                    then=median_foodb_content,
+                ),
+                # This case shouldn't actually every occur, because wo only create
+                # MoleculeOccurrence objects when we have data.
+                default=models.Value(0),
+                output_field=models.FloatField(),
+            )
+        )
+        if filter_zero:
+            queryset = queryset.filter(score__gt=0)
+        return queryset
+
+
+MoleculeOccurrenceManager = models.Manager.from_queryset(MoleculeOccurrenceQuerySet)
+
+
+class MoleculeOccurrence(models.Model):
     """Relation between a molecule and an ingredient.
 
     An entry of this model means that the molecule can be found in the ingredient.
@@ -275,6 +341,8 @@ class IngredientMolecule(models.Model):
             "used to calculate an average."
         ),
     )
+
+    objects = MoleculeOccurrenceManager()
 
     class Meta:
         constraints = [

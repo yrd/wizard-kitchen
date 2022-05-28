@@ -1,4 +1,6 @@
 import math
+from collections.abc import Sequence
+from typing import Any
 
 from django.contrib.postgres.search import SearchQuery, SearchRank, SearchVector
 from django.db import models
@@ -10,8 +12,9 @@ from django.http import (
     HttpResponseNotAllowed,
 )
 from django.shortcuts import render
+from django.views import View
 
-from .models import Ingredient, MoleculeOccurrence, Molecule
+from .models import Ingredient, IngredientQuerySet, Molecule, MoleculeOccurrence
 
 
 def index(request: HttpRequest) -> HttpResponse:
@@ -104,158 +107,152 @@ def section_cards(request: HttpRequest) -> HttpResponse:
     return render(request, "data/section_cards.html", {"library": library})
 
 
-def pairing_results(request: HttpRequest) -> HttpResponse:
-    if request.method != "GET":
-        return HttpResponseNotAllowed(permitted_methods=["POST"])
-
-    ingredients_parameter = request.GET.get("ingredients", "")
-    if not isinstance(ingredients_parameter, str):
-        return HttpResponseBadRequest()
-    selected_ingredient_pks = list[int]()
-    for value in ingredients_parameter.split(","):
-        try:
-            selected_ingredient_pks.append(int(value.strip()))
-        except ValueError:
-            return HttpResponseBadRequest()
-
-    # For each ingredient-molecule entry, calculate a score, which is more or less how
-    # much the molecule is present in that ingredient, but with respect to both sources.
-    ingredient_molecules_with_score = IngredientMolecule.objects.annotate(
-        score=models.Case(
-            # Prefer data from FooDB, if it is available.
-            models.When(
-                models.Q(foodb_content_sample_count__gt=0),
-                then=(
-                    models.F("foodb_content_sum")
-                    / models.F("foodb_content_sample_count")
-                ),
-            ),
-            # Otherwise, check if FlavorDB has a record. Here, we don't really have
-            # a way to calculate the score, so we give all FlavorDB records a fixed
-            # value.
-            models.When(models.Q(flavordb_found=True), then=models.Value(300)),
-            # This case shouldn't actually every occur, because wo only create
-            # IngredientMolecule objects when we have data.
-            default=models.Value(0),
-            output_field=models.FloatField(),
+class PairingResultsView(View):
+    @classmethod
+    def calculate_matching_score(cls, ingredient_pks: Sequence[int]) -> int:
+        # Find those molecules that are present in all the provided ingredients.
+        shared_molecules = Molecule.objects.filter(
+            *[
+                models.Exists(
+                    MoleculeOccurrence.objects.filter(
+                        models.Q(foodb_content_sample_count__gt=0)
+                        | models.Q(flavordb_found=True),
+                        molecule=models.OuterRef("pk"),
+                        ingredient=ingredient_pk,
+                    )
+                )
+                for ingredient_pk in ingredient_pks
+            ]
         )
-    ).filter(score__gt=0)
 
-    ##################
-    # Matching score #
-    ##################
+        shared_ingredient_score = (
+            MoleculeOccurrence.objects.with_score()
+            .filter(ingredient__in=ingredient_pks, molecule__in=shared_molecules)
+            .aggregate(value=models.Sum("score"))
+        )
+        total_ingredient_score = (
+            MoleculeOccurrence.objects.with_score()
+            .filter(ingredient__in=ingredient_pks)
+            .aggregate(value=models.Sum("score"))
+        )
 
-    # Find those molecules that are present in all the provided ingredients.
-    shared_molecules = Molecule.objects.filter(
-        *[
-            models.Exists(
-                MoleculeOccurrence.objects.filter(
-                    models.Q(foodb_content_sample_count__gt=0)
-                    | models.Q(flavordb_found=True),
-                    molecule=models.OuterRef("pk"),
-                    ingredient=ingredient_pk,
-                )
-            )
-            for ingredient_pk in selected_ingredient_pks
-        ]
-    )
-    shared_ingredient_score = ingredient_molecules_with_score.filter(
-        ingredient__in=selected_ingredient_pks, molecule__in=shared_molecules
-    ).aggregate(value=models.Sum("score"))
-    total_ingredient_score = ingredient_molecules_with_score.filter(
-        ingredient__in=selected_ingredient_pks
-    ).aggregate(value=models.Sum("score"))
-    try:
-        matching_score = (
-            shared_ingredient_score.get("value", 0)
-            / total_ingredient_score.get("value", 0)
-        ) * 100
-    except ZeroDivisionError:
-        matching_score = 0
+        try:
+            return (
+                shared_ingredient_score.get("value", 0)
+                / total_ingredient_score.get("value", 0)
+            ) * 100
+        except ZeroDivisionError:
+            return 0
 
-    #########################
-    # Suggested ingredients #
-    #########################
+    @classmethod
+    def calculate_suggested_ingredients(
+        cls, ingredient_pks: Sequence[int], *, reverse: bool = False
+    ) -> IngredientQuerySet:
+        # Group by molecule and sum up these scores for all the ingredients that were
+        # selected. This gives us a list of molecules in our query.
+        scored_molecule_occurrences = MoleculeOccurrence.objects.with_score(
+            filter_zero=False
+        ).filter(ingredient__in=ingredient_pks)
+        (
+            scored_molecule_occurrences_sql,
+            scored_molecule_occurrences_params,
+        ) = scored_molecule_occurrences.query.sql_with_params()
+        scored_molecules = expressions.RawSQL(
+            f"""
+            SELECT molecule_id, SUM(score) as total_score
+            FROM ({scored_molecule_occurrences_sql}) scored_molecule_occurrences
+            WHERE scored_molecule_occurrences.score > 0
+            GROUP BY molecule_id
+            """,
+            scored_molecule_occurrences_params,
+        )
 
-    # Group by molecule and sum up these scores for all the ingredients that were
-    # selected. This gives us a list of molecules in our query.
-    ranked_molecules = (
-        ingredient_molecules_with_score.filter(ingredient__in=selected_ingredient_pks)
-        # Group by molecule and calculate a total score for each molecule.
-        .values("molecule")
-        .annotate(total_score=models.Sum("score"))
-        .values("molecule", "total_score")
-    )
-
-    # This is the final result query that finds other ingredients that could match.
-    suggested_ingredients_base = (
-        Ingredient.objects.filter_with_data()
-        .annotate(
-            weighted_score=models.Subquery(
-                MoleculeOccurrence.objects.filter(
-                    ingredient=models.OuterRef("pk"),
-                )
-                .annotate(
-                    # Both ranked_molecules and max_score will be ingested using the
-                    # WITH clause later on.
-                    weighted_score=functions.Coalesce(
-                        expressions.RawSQL(
-                            # The "U0" below should actually be an OuterRef("molecule"),
-                            # but Django doesn't seem to resolve those inside RawSQL
-                            # statements.
-                            """
-                            SELECT total_score
-                            FROM ranked_molecules
-                            WHERE ranked_molecules.molecule_id = U0.molecule_id
-                            """,
+        # This is the final result query that finds other ingredients that could match.
+        base_queryset = (
+            Ingredient.objects.filter_with_data()
+            .annotate(
+                weighted_score=models.Subquery(
+                    MoleculeOccurrence.objects.filter(
+                        ingredient=models.OuterRef("pk"),
+                    )
+                    .annotate(
+                        # Both scored_molecules and max_score will be ingested using the
+                        # WITH clause later on.
+                        weighted_score=functions.Coalesce(
+                            expressions.RawSQL(
+                                # The "U0" below should actually be an OuterRef("molecule"),
+                                # but Django doesn't seem to resolve those inside RawSQL
+                                # statements.
+                                """
+                                SELECT total_score
+                                FROM scored_molecules
+                                WHERE scored_molecules.molecule_id = U0.molecule_id
+                                """,
+                                (),
+                                output_field=models.FloatField(),
+                            ),
+                            models.Value(0.0),
+                        )
+                        / expressions.RawSQL(
+                            "SELECT * FROM max_score",
                             (),
                             output_field=models.FloatField(),
-                        ),
-                        models.Value(0.0),
+                        )
                     )
-                    / expressions.RawSQL(
-                        "SELECT * FROM max_score", (), output_field=models.FloatField()
-                    )
+                    .values("ingredient")
+                    .annotate(total_weighted_score=models.Sum("weighted_score"))
+                    .values("total_weighted_score")
                 )
-                .values("ingredient")
-                .annotate(total_weighted_score=models.Sum("weighted_score"))
-                .values("total_weighted_score")
             )
+            .filter(
+                # Filter out the already selected ingredients.
+                ~models.Q(pk__in=ingredient_pks)
+            )
+            .annotate_display_name()
+            # By default, highest-ranking results are returned first.
+            .order_by("-weighted_score" if not reverse else "weighted_score")
         )
-        .filter(
-            # Filter out the already selected ingredients.
-            ~models.Q(pk__in=selected_ingredient_pks)
+
+        (
+            base_queryset_sql,
+            base_queryset_params,
+        ) = base_queryset.query.sql_with_params()
+
+        return Ingredient.objects.raw(
+            f"""
+            WITH
+                scored_molecules AS ({scored_molecules.sql}),
+
+                max_score AS (SELECT MAX(total_score) FROM scored_molecules)
+
+            {base_queryset_sql}
+            """,
+            (*scored_molecules.params, *base_queryset_params),
         )
-        .annotate_display_name()
-        .order_by("-weighted_score")
-    )
 
-    (
-        ranked_molecules_sql,
-        ranked_molecules_params,
-    ) = ranked_molecules.query.sql_with_params()
-    (
-        suggested_ingredients_base_sql,
-        suggested_ingredients_base_params,
-    ) = suggested_ingredients_base.query.sql_with_params()
+    def get(self, request: HttpRequest, *args: Any, **kwargs: Any) -> HttpResponse:
+        ingredients_parameter = request.GET.get("ingredients", "")
+        if not isinstance(ingredients_parameter, str):
+            return HttpResponseBadRequest()
+        selected_ingredient_pks = list[int]()
+        for value in ingredients_parameter.split(","):
+            try:
+                selected_ingredient_pks.append(int(value.strip()))
+            except ValueError:
+                return HttpResponseBadRequest()
 
-    suggested_ingredients = Ingredient.objects.raw(
-        f"""
-        WITH
-            ranked_molecules AS ({ranked_molecules_sql}),
-
-            max_score AS (SELECT MAX(total_score) FROM ranked_molecules)
-
-        {suggested_ingredients_base_sql}
-        """,
-        (*ranked_molecules_params, *suggested_ingredients_base_params),
-    )
-
-    return render(
-        request,
-        "data/pairing_results.html",
-        {
-            "matching_score": matching_score,
-            "suggested_ingredients": suggested_ingredients[:15],
-        },
-    )
+        return render(
+            request,
+            "data/pairing_results.html",
+            {
+                "matching_score": self.calculate_matching_score(
+                    selected_ingredient_pks
+                ),
+                "matching_ingredients": self.calculate_suggested_ingredients(
+                    selected_ingredient_pks
+                )[:15],
+                "not_matching_ingredients": self.calculate_suggested_ingredients(
+                    selected_ingredient_pks, reverse=True
+                )[:6],
+            },
+        )
