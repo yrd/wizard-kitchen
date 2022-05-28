@@ -261,6 +261,11 @@ strong {
 		grid-column: 7;
 		grid-row: 1 / span 10;
 	}
+
+	> .CardFan.empty {
+		grid-row: 1 / span 10;
+		place-self: center;
+	}
 }
 
 .CategorySelector {
@@ -316,9 +321,6 @@ input[type=radio]:checked + .CategorySelector {
 $block-card-size: 14rem;
 $inline-card-size: 8rem;
 
-//input[type=checkbox][name^=ingredient] {
-//}
-
 .CardFan {
 	display: none;
 	place-self: end stretch;
@@ -333,6 +335,13 @@ $inline-card-size: 8rem;
 			// We need this to catch the zero-devision error.
 			--factor: 0;
 		}
+	}
+
+	&.empty {
+		display: block;
+		height: 2rem;
+		padding-inline: var(--gap-l);
+		opacity: var(--hinted-opacity);
 	}
 
 	> label {

@@ -2,7 +2,7 @@ import math
 from collections.abc import Sequence
 from typing import Any
 
-from django.contrib.postgres.search import SearchQuery, SearchRank, SearchVector
+from django.contrib.postgres.search import TrigramSimilarity
 from django.db import models
 from django.db.models import expressions, functions
 from django.http import (
@@ -14,7 +14,13 @@ from django.http import (
 from django.shortcuts import render
 from django.views import View
 
-from .models import Ingredient, IngredientQuerySet, Molecule, MoleculeOccurrence
+from .models import (
+    Ingredient,
+    IngredientName,
+    IngredientQuerySet,
+    Molecule,
+    MoleculeOccurrence,
+)
 
 
 def index(request: HttpRequest) -> HttpResponse:
@@ -60,18 +66,29 @@ def section_cards(request: HttpRequest) -> HttpResponse:
     if search_query:
         all_ingredients = list(
             Ingredient.objects.filter_with_data()
-            .annotate(
-                rank=SearchRank(SearchVector("name__label"), SearchQuery(search_query)),
-            )
             .annotate_display_name()
-            .filter(rank__gt=0)
-            .order_by("-rank")
+            .filter(
+                models.Exists(
+                    IngredientName.objects.annotate(
+                        rank=TrigramSimilarity("label", search_query)
+                    ).filter(
+                        models.Q(rank__gt=0.5)
+                        | models.Q(label__unaccent__icontains=search_query),
+                        ingredient=models.OuterRef("pk"),
+                    )
+                )
+            )
+            .order_by("display_name")
             .distinct()[:30]
         )
+
+        if len(all_ingredients) == 0:
+            return render(request, "data/empty_search_results.html")
+
         # The results should all have the same category because we don't want
         # to group them.
         for ingredient in all_ingredients:
-            ingredient.category = "Search"
+            ingredient.category = "Results"
     else:
         all_ingredients = list(
             Ingredient.objects.filter_with_data()

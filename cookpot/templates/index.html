@@ -281,29 +281,29 @@
 			finish()
 		}
 
-		document.querySelectorAll("input[name=selectedsection]")
-			.forEach((selectedSectionInput) => selectedSectionInput.addEventListener("input", async () => {
-				if (!selectedSectionInput.checked) {
-					return
-				}
-				await loadSection(`section=${encodeURIComponent(selectedSectionInput.value)}`)
-			}))
-
 		const ingredientSearchInput = document.getElementById("ingredient-search")
 		ingredientSearchInput.addEventListener("focus", () => {
 			clearLoadedSection()
-			ingredientSearchInput.value = ""
 			const selectedSectionInput = document.querySelector("input[name=selectedsection]:checked")
 			if (selectedSectionInput !== null) {
 				selectedSectionInput.checked = false
 			}
 		})
-		ingredientSearchInput.addEventListener("blur", async () => {
+		ingredientSearchInput.addEventListener("input", async () => {
 			const searchQuery = ingredientSearchInput.value.trim()
 			if (searchQuery) {
 				await loadSection(`query=${searchQuery}`)
 			}
 		})
+
+		document.querySelectorAll("input[name=selectedsection]")
+			.forEach((selectedSectionInput) => selectedSectionInput.addEventListener("input", async () => {
+				if (!selectedSectionInput.checked) {
+					return
+				}
+				ingredientSearchInput.value = ""
+				await loadSection(`section=${encodeURIComponent(selectedSectionInput.value)}`)
+			}))
 
 		const resultsElement = document.getElementById("results-container")
 		document.getElementById("results-button").addEventListener("click", async (event) => {
