@@ -1,4 +1,5 @@
 include cookpot/static/*.css
 include cookpot/static/fonts/*.ttf
+include cookpot/static/fonts/*.woff2
 include cookpot/templates/*.html
 include cookpot/templates/**/*.html
