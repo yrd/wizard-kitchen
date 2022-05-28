@@ -306,7 +306,9 @@
 		})
 
 		const resultsElement = document.getElementById("results-container")
-		document.getElementById("results-button").addEventListener("click", async () => {
+		document.getElementById("results-button").addEventListener("click", async (event) => {
+			event.target.innerText = "Working…"
+			event.target.disabled = true
 			resultsElement.classList.add("empty")
 
 			const selectedIngredients = Array.from(
@@ -322,6 +324,8 @@
 			}
 			resultsElement.querySelector(".inner-content").innerHTML = await response.text()
 
+			event.target.innerText = "Query!"
+			event.target.disabled = false
 			resultsElement.classList.remove("empty")
 		})
 	</script>
