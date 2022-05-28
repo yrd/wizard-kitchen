@@ -19,7 +19,7 @@ class IngredientQuerySet(models.QuerySet["Ingredient"]):
         """Filter out objects that don't have any molecule data (yet)."""
         return self.filter(
             models.Exists(
-                IngredientMolecule.objects.filter(
+                MoleculeOccurrence.objects.filter(
                     (
                         models.Q(flavordb_found=True)
                         | models.Q(foodb_content_sample_count__gt=0)
@@ -238,15 +238,15 @@ class IngredientMolecule(models.Model):
     ingredient = models.ForeignKey(
         Ingredient,
         on_delete=models.CASCADE,
-        related_name="molecule_entries",
-        related_query_name="molecule_entry",
+        related_name="molecule_occurrences",
+        related_query_name="molecule_occurrence",
         verbose_name=_("ingredient"),
     )
     molecule = models.ForeignKey(
         Molecule,
         on_delete=models.CASCADE,
-        related_name="ingredient_entries",
-        related_query_name="ingredient_entry",
+        related_name="occurrences",
+        related_query_name="occurrence",
         verbose_name=_("molecule"),
     )
 

@@ -14,9 +14,9 @@ from django.db.models import functions
 
 from cookpot.ingredients.models import (
     Ingredient,
-    IngredientMolecule,
     IngredientName,
     Molecule,
+    MoleculeOccurrence,
 )
 
 FLAVORDB_CATEGORY_MAPPINGS = {
@@ -145,7 +145,7 @@ class Command(BaseCommand):
                 f"{molecule.foodb_id!r} != {molecule_foodb_id}"
             )
 
-            ingredient.molecule_entries.update_or_create(
+            ingredient.molecule_occurrences.update_or_create(
                 molecule=molecule,
                 defaults={"flavordb_found": True},
             )
@@ -179,7 +179,7 @@ class Command(BaseCommand):
         return created
 
     def sync_flavordb(self) -> None:
-        IngredientMolecule.objects.update(flavordb_found=False)
+        MoleculeOccurrence.objects.update(flavordb_found=False)
 
         session = requests.Session()
         for entity_id in range(1000):
@@ -422,7 +422,7 @@ class Command(BaseCommand):
         except TypeError:
             # Some records don't have this field.
             return False
-        ingredient_molecule_entry, _ = IngredientMolecule.objects.get_or_create(
+        ingredient_molecule_entry, _ = MoleculeOccurrence.objects.get_or_create(
             ingredient=ingredient, molecule=molecule
         )
         ingredient_molecule_entry.foodb_content_sum = models.F(
@@ -458,7 +458,7 @@ class Command(BaseCommand):
                         f"[FooDB compounds] Processed {line_index + 1} lines."
                     )
 
-        IngredientMolecule.objects.update(
+        MoleculeOccurrence.objects.update(
             foodb_content_sum=0, foodb_content_sample_count=0
         )
         ingredient_cache = dict[int, Ingredient]()

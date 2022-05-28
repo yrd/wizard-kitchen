@@ -11,7 +11,7 @@ from django.http import (
 )
 from django.shortcuts import render
 
-from .models import Ingredient, IngredientMolecule, Molecule
+from .models import Ingredient, MoleculeOccurrence, Molecule
 
 
 def index(request: HttpRequest) -> HttpResponse:
@@ -149,7 +149,7 @@ def pairing_results(request: HttpRequest) -> HttpResponse:
     shared_molecules = Molecule.objects.filter(
         *[
             models.Exists(
-                IngredientMolecule.objects.filter(
+                MoleculeOccurrence.objects.filter(
                     models.Q(foodb_content_sample_count__gt=0)
                     | models.Q(flavordb_found=True),
                     molecule=models.OuterRef("pk"),
@@ -192,7 +192,7 @@ def pairing_results(request: HttpRequest) -> HttpResponse:
         Ingredient.objects.filter_with_data()
         .annotate(
             weighted_score=models.Subquery(
-                IngredientMolecule.objects.filter(
+                MoleculeOccurrence.objects.filter(
                     ingredient=models.OuterRef("pk"),
                 )
                 .annotate(
