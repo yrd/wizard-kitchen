@@ -155,8 +155,8 @@ class PairingResultsView(View):
 
         try:
             return (
-                shared_ingredient_score.get("value", 0)
-                / total_ingredient_score.get("value", 0)
+                (shared_ingredient_score.get("value") or 0)
+                / (total_ingredient_score.get("value") or 0)
             ) * 100
         except ZeroDivisionError:
             return 0
