@@ -376,7 +376,7 @@ $inline-card-size: 8rem;
 					--factor: calc(#{$i} / (var(--card-count) - 1) * 2 - 1);
 					--abs-factor: max(var(--factor), -1 * var(--factor));
 					transform:
-						translateY(calc((5rem + 0.2rem * var(--card-count)) * var(--abs-factor) - 4rem))
+						translateY(calc((5rem + 0.2rem * var(--card-count)) * var(--abs-factor) * var(--abs-factor) - 4rem))
 						rotate(calc(40deg * var(--factor)));
 				}
 			}
