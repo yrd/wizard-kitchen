@@ -268,7 +268,7 @@ class MoleculeOccurrenceQuerySet(models.QuerySet["MoleculeOccurrence"]):
             score=models.Case(
                 # Prefer data from FooDB, if it is available.
                 models.When(
-                    models.Q(foodb_content_sample_count__gt=0),
+                    models.Q(foodb_content_sum__gt=0, foodb_content_sample_count__gt=0),
                     then=(
                         models.F("foodb_content_sum")
                         / models.F("foodb_content_sample_count")
