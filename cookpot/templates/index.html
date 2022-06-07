@@ -303,9 +303,20 @@
 			event.target.disabled = true
 			resultsElement.classList.add("empty")
 
+			function finish() {
+				event.target.innerText = "Query!"
+				event.target.disabled = false
+			}
+
 			const selectedIngredients = Array.from(
 				document.querySelectorAll(".SelectedIngredients [data-ingredient]")
 			).map((element) => element.dataset.ingredient).join(",")
+
+			if (selectedIngredients === "") {
+				alert("Please add some ingredients first.")
+				finish()
+				return
+			}
 
 			const response = await fetch(
 				`{% url "pairing_results" %}?ingredients=${encodeURIComponent(selectedIngredients)}`
@@ -316,9 +327,8 @@
 			}
 			resultsElement.querySelector(".inner-content").innerHTML = await response.text()
 
-			event.target.innerText = "Query!"
-			event.target.disabled = false
 			resultsElement.classList.remove("empty")
+			finish()
 		})
 	</script>
 {% endblock %}
