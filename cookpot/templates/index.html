@@ -223,6 +223,14 @@
 					checkbox.blur()
 
 					if (checkbox.checked) {
+						// The number of ingredients processed simultaneously is capped
+						// server-side.
+						if (document.querySelectorAll(".SelectedIngredients > li").length >= {{ settings.INGREDIENT_COUNT_CAP }}) {
+							alert("Woah there – wizards can't carry that much! Deselect another ingredient before continuing.")
+							checkbox.checked = false
+							return
+						}
+
 						const listItem = document.createElement("li")
 						const button = document.createElement("button")
 						button.dataset.ingredient = checkbox.dataset.ingredient

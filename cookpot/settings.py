@@ -149,3 +149,6 @@ try:
     from local_settings import *
 except ImportError:
     pass
+
+#: Cap the number of ingredients that will be processed together.
+INGREDIENT_COUNT_CAP = 9

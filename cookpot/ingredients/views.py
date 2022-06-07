@@ -2,6 +2,7 @@ import math
 from collections.abc import Sequence
 from typing import Any
 
+from django.conf import settings
 from django.contrib.postgres.search import TrigramSimilarity
 from django.db import models
 from django.db.models import expressions, functions
@@ -47,6 +48,7 @@ def index(request: HttpRequest) -> HttpResponse:
             # top again. Keep this in sync with the stylesheet. We add two to account
             # for the search bar.
             "missing_sections": range(10 - ((len(sections_with_labels) + 2) % 10)),
+            "settings": settings,
         },
     )
 
@@ -257,6 +259,9 @@ class PairingResultsView(View):
                 selected_ingredient_pks.append(int(value.strip()))
             except ValueError:
                 return HttpResponseBadRequest()
+        selected_ingredient_pks = selected_ingredient_pks[
+            : settings.INGREDIENT_COUNT_CAP
+        ]
 
         return render(
             request,
