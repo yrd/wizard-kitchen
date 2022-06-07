@@ -183,9 +183,9 @@ strong {
 	@include mobile {
 		grid-template:
 			"header" auto
+			"results" auto
 			"info" auto
 			"cards" auto
-			"results" auto
 			"footer" auto
 			/ 1fr;
 	}
