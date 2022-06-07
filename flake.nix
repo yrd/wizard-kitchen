@@ -11,6 +11,7 @@
       pythonDependencies = (pythonPackages: with pythonPackages; [
       	# Runtime
         django_4
+        psycopg2
         requests
         # Tests
         hypothesis
