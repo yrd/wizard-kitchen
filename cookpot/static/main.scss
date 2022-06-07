@@ -200,7 +200,10 @@ strong {
 }
 
 .Attribution {
+	margin: 0;
 	padding: var(--gap-s) var(--gap-l);
+	font-size: var(--text-s);
+	opacity: var(--hinted-opacity);
 }
 
 .NoScript {
