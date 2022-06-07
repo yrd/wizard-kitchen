@@ -59,6 +59,18 @@
 	src: url("fonts/Grandstander-Black.woff2") format("woff2");
 }
 
+@mixin desktop {
+	@media screen and (min-width: 94rem) and (min-height: 64rem) {
+		@content
+	}
+}
+
+@mixin mobile {
+	@media screen and (max-width: 94rem), screen and (max-height: 64rem) {
+		@content
+	}
+}
+
 *, *::before, *::after {
 	box-sizing: border-box;
 }
@@ -66,7 +78,10 @@
 html, body {
 	margin: 0;
 	height: 100%;
-	overflow: hidden;
+
+	@include desktop {
+		overflow: hidden;
+	}
 }
 
 body {
@@ -137,9 +152,11 @@ strong {
 
 .Container {
 	display: grid;
-	grid-template: "header info results" 1fr
+	grid-template:
+		"header info results" 1fr
 		"footer info results" auto
-		"cards cards cards" auto / minmax(20rem, 35rem) 1fr minmax(30rem, 45rem);
+		"cards cards cards" auto
+		/ minmax(20rem, 35rem) 1fr minmax(30rem, 45rem);
 	gap: var(--gap-l);
 	height: 100vh;
 
@@ -162,19 +179,31 @@ strong {
 	> .Attribution {
 		grid-area: footer;
 	}
+
+	@include mobile {
+		grid-template:
+			"header" auto
+			"info" auto
+			"cards" auto
+			"results" auto
+			"footer" auto
+			/ 1fr;
+	}
 }
 
 .Infos {
 	padding: var(--gap-s) var(--gap-l);
-	overflow-y: auto;
+
+	@include desktop {
+		overflow-y: auto;
+	}
 }
 
 .Attribution {
 	padding: var(--gap-s) var(--gap-l);
 }
 
-.NoScript,
-.Screensize-Blocker {
+.NoScript {
 	color: #e55e40;
 }
 
@@ -186,20 +215,6 @@ strong {
 	position: absolute;
 	opacity: 0;
 	pointer-events: none;
-}
-
-@media screen and (max-width: 94rem) and (max-height: 64rem) {
-	.Container {
-		display: none;
-	}
-
-	.Screensize-Blocker {
-		display: block;
-		position: fixed;
-		inset: 0;
-		padding: var(--gap-s);
-		text-align: center;
-	}
 }
 
 .HeroButton {
@@ -244,11 +259,6 @@ strong {
 
 .Cards {
 	display: grid;
-	grid-template-columns: repeat(6, auto) 1fr;
-	// When changing the following, make sure to keep it in sync with the
-	// calculation in the index view.
-	grid-template-rows: repeat(10, auto);
-	grid-auto-flow: column dense;
 	gap: var(--gap-xs);
 	padding: var(--gap-xs);
 	position: relative;
@@ -257,14 +267,39 @@ strong {
 		@extend %HiddenInput;
 	}
 
-	> div {
-		grid-column: 7;
-		grid-row: 1 / span 10;
+	@include mobile {
+		grid-template-columns: 1fr 1fr;
+		grid-template-rows: none;
+		grid-auto-flow: row dense;
+
+		> .spacer {
+			display: none;
+		}
+
+		> div {
+			grid-column: 1 / span 2;
+			// This is just a random large number. Ideally, we would like an option
+			// for "at the bottom".
+			grid-row: 17;
+		}
 	}
 
-	> .CardFan.empty {
-		grid-row: 1 / span 10;
-		place-self: center;
+	@include desktop {
+		grid-template-columns: repeat(6, auto) 1fr;
+		// When changing the following, make sure to keep it in sync with the
+		// calculation in the index view.
+		grid-template-rows: repeat(10, auto);
+		grid-auto-flow: column dense;
+
+		> div {
+			grid-column: 7;
+			grid-row: 1 / span 10;
+		}
+
+		> .CardFan.empty {
+			grid-row: 1 / span 10;
+			place-self: center;
+		}
 	}
 }
 
@@ -311,6 +346,13 @@ input[type=radio]:checked + .CategorySelector {
 
 	+ .CardFan {
 		display: block;
+
+		@include mobile {
+			display: flex;
+			flex-wrap: wrap;
+			justify-content: center;
+			gap: var(--gap-s);
+		}
 	}
 }
 
@@ -324,9 +366,12 @@ $inline-card-size: 8rem;
 .CardFan {
 	display: none;
 	place-self: end stretch;
-	block-size: $block-card-size;
 	position: relative;
 	text-align: center;
+
+	@include desktop {
+		block-size: $block-card-size;
+	}
 
 	&.single {
 		--card-count: 1;
@@ -355,29 +400,31 @@ $inline-card-size: 8rem;
 		display: inline-block;
 		position: relative;
 		block-size: $block-card-size;
-		inline-size: calc(90% / var(--card-count));
 		max-inline-size: $inline-card-size;
 		animation: CardFan-label-enter var(--subtle-motion) both;
 
+		@include desktop {
+			inline-size: calc(90% / var(--card-count));
 
-		> * {
-			position: absolute;
-			transition: transform var(--prominent-motion), opacity var(--subtle-motion);
-			pointer-events: none;
-		}
+			> * {
+				position: absolute;
+				transition: transform var(--prominent-motion), opacity var(--subtle-motion);
+				pointer-events: none;
+			}
 
-		@for $i from 0 through 98 {
-			&:nth-of-type(#{$i + 1}) {
-				animation-delay: 0.02s * $i;
+			@for $i from 0 through 98 {
+				&:nth-of-type(#{$i + 1}) {
+					animation-delay: 0.02s * $i;
 
-				> * {
-					// This value ranges from -1 for the leftmost card to +1 for the
-					// rightmost. For the center card it will be zero.
-					--factor: calc(#{$i} / (var(--card-count) - 1) * 2 - 1);
-					--abs-factor: max(var(--factor), -1 * var(--factor));
-					transform:
-						translateY(calc((5rem + 0.2rem * var(--card-count)) * var(--abs-factor) * var(--abs-factor) - 4rem))
-						rotate(calc(40deg * var(--factor)));
+					> * {
+						// This value ranges from -1 for the leftmost card to +1 for the
+						// rightmost. For the center card it will be zero.
+						--factor: calc(#{$i} / (var(--card-count) - 1) * 2 - 1);
+						--abs-factor: max(var(--factor), -1 * var(--factor));
+						transform:
+							translateY(calc((5rem + 0.2rem * var(--card-count)) * var(--abs-factor) * var(--abs-factor) - 4rem))
+							rotate(calc(40deg * var(--factor)));
+					}
 				}
 			}
 		}
@@ -411,6 +458,11 @@ $inline-card-size: 8rem;
 					}
 				}
 				animation: IngredientCard-select var(--prominent-motion) forwards;
+
+				@include mobile {
+					position: absolute;
+					inset: 0;
+				}
 			}
 
 			> .IngredientPlaceholder {
